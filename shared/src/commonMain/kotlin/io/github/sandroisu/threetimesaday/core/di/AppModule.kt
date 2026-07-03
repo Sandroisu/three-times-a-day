@@ -7,6 +7,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.data.InMemoryMedica
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.data.InMemoryDailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
+import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorViewModel
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
 import org.koin.core.module.dsl.viewModelOf
@@ -19,4 +20,5 @@ val commonAppModule = module {
     single<MedicationRepository> { InMemoryMedicationRepository() }
     single { GenerateMedicationIntakeEventsForDateUseCase() }
     viewModelOf(::TodayViewModel)
+    viewModelOf(::ScheduleEditorViewModel)
 }

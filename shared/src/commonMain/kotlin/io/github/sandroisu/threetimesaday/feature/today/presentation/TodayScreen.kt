@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -24,7 +25,10 @@ import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeE
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun TodayScreen(todayViewModel: TodayViewModel = koinViewModel()) {
+fun TodayScreen(
+    onEditScheduleClick: () -> Unit,
+    todayViewModel: TodayViewModel = koinViewModel()
+) {
     val uiState by todayViewModel.uiState.collectAsStateWithLifecycle()
     Column(
         modifier = Modifier
@@ -43,6 +47,9 @@ fun TodayScreen(todayViewModel: TodayViewModel = koinViewModel()) {
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+        }
+        Button(onClick = onEditScheduleClick) {
+            Text(text = "Режим дня")
         }
         when {
             uiState.isLoading -> LoadingState()
