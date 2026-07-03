@@ -2,18 +2,10 @@ package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
+import io.github.sandroisu.threetimesaday.feature.medication.presentation.medicationIntakeMomentLabel
 
-fun intakeMomentLabel(intakeMoment: MedicationIntakeMoment?): String = when (intakeMoment) {
-    MedicationIntakeMoment.AfterWakeUp -> "После пробуждения"
-    MedicationIntakeMoment.BeforeBreakfast -> "До завтрака"
-    MedicationIntakeMoment.AfterBreakfast -> "После завтрака"
-    MedicationIntakeMoment.BeforeLunch -> "До обеда"
-    MedicationIntakeMoment.AfterLunch -> "После обеда"
-    MedicationIntakeMoment.BeforeDinner -> "До ужина"
-    MedicationIntakeMoment.AfterDinner -> "После ужина"
-    MedicationIntakeMoment.BeforeSleep -> "Перед сном"
-    null -> "По расписанию"
-}
+fun intakeMomentLabel(intakeMoment: MedicationIntakeMoment?): String =
+    if (intakeMoment == null) "По расписанию" else medicationIntakeMomentLabel(intakeMoment)
 
 fun intakeStatusLabel(status: MedicationIntakeStatus): String = when (status) {
     MedicationIntakeStatus.Scheduled -> "Запланировано"

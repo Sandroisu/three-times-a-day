@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -27,6 +28,7 @@ import org.koin.compose.viewmodel.koinViewModel
 @Composable
 fun TodayScreen(
     onEditScheduleClick: () -> Unit,
+    onEditMedicationsClick: () -> Unit,
     todayViewModel: TodayViewModel = koinViewModel()
 ) {
     val uiState by todayViewModel.uiState.collectAsStateWithLifecycle()
@@ -48,8 +50,16 @@ fun TodayScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
-        Button(onClick = onEditScheduleClick) {
-            Text(text = "Режим дня")
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(onClick = onEditScheduleClick) {
+                Text(text = "Режим дня")
+            }
+            Button(onClick = onEditMedicationsClick) {
+                Text(text = "Препараты")
+            }
         }
         when {
             uiState.isLoading -> LoadingState()
