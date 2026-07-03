@@ -4,5 +4,8 @@ import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeE
 
 data class TodayUiState(
     val screenTitle: String = "Три раза в день",
-    val intakeEvents: List<MedicationIntakeEvent> = emptyList()
+    val dateTitle: String = "",
+    val isLoading: Boolean = false,
+    val intakeEvents: List<MedicationIntakeEvent> = emptyList(),
+    val errorMessage: String? = null
 )
