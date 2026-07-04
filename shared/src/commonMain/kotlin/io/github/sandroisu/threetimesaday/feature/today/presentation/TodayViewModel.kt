@@ -4,21 +4,32 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.core.time.formatScreenDate
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
+import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
 
 class TodayViewModel(
     private val timeProvider: TimeProvider,
     private val dailyScheduleRepository: DailyScheduleRepository,
     private val medicationRepository: MedicationRepository,
-    private val generateMedicationIntakeEventsForDate: GenerateMedicationIntakeEventsForDateUseCase
+    private val medicationIntakeRecordRepository: MedicationIntakeRecordRepository,
+    private val generateMedicationIntakeEventsForDate: GenerateMedicationIntakeEventsForDateUseCase,
+    private val applyMedicationIntakeRecords: ApplyMedicationIntakeRecordsUseCase
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
@@ -37,11 +48,13 @@ class TodayViewModel(
                 val currentDate = timeProvider.currentDate()
                 val dailySchedule = dailyScheduleRepository.getDailySchedule()
                 val medications = medicationRepository.getMedications()
-                val intakeEvents = generateMedicationIntakeEventsForDate(
+                val generatedEvents = generateMedicationIntakeEventsForDate(
                     date = currentDate,
                     dailySchedule = dailySchedule,
                     medications = medications
                 )
+                val records = medicationIntakeRecordRepository.getRecordsForDate(currentDate)
+                val intakeEvents = applyMedicationIntakeRecords(generatedEvents, records)
                 mutableUiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
@@ -61,5 +74,67 @@ class TodayViewModel(
                 }
             }
         }
+    }
+
+    fun markIntakeTaken(eventId: String) {
+        applyStatus(eventId, MedicationIntakeStatus.Taken)
+    }
+
+    fun markIntakeSkipped(eventId: String) {
+        applyStatus(eventId, MedicationIntakeStatus.Skipped)
+    }
+
+    fun postponeIntake(eventId: String) {
+        applyStatus(eventId, MedicationIntakeStatus.Postponed)
+    }
+
+    private fun applyStatus(eventId: String, status: MedicationIntakeStatus) {
+        val targetEvent = mutableUiState.value.intakeEvents.firstOrNull { event -> event.eventId == eventId }
+            ?: return
+        viewModelScope.launch {
+            try {
+                medicationIntakeRecordRepository.saveRecord(buildRecord(targetEvent, status))
+                loadToday()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (saveFailure: Exception) {
+                mutableUiState.update { currentState ->
+                    currentState.copy(
+                        errorMessage = saveFailure.message ?: "Не удалось сохранить статус приёма"
+                    )
+                }
+            }
+        }
+    }
+
+    private fun buildRecord(event: MedicationIntakeEvent, status: MedicationIntakeStatus): MedicationIntakeRecord {
+        val updatedDateTime = timeProvider.currentDateTime()
+        val postponedDateTime = if (status == MedicationIntakeStatus.Postponed) {
+            plusMinutes(event.scheduledDateTime, POSTPONE_MINUTES)
+        } else {
+            null
+        }
+        return MedicationIntakeRecord(
+            eventId = event.eventId,
+            medicationId = event.medicationId,
+            scheduledDateTime = event.scheduledDateTime,
+            status = status,
+            updatedDateTime = updatedDateTime,
+            postponedDateTime = postponedDateTime
+        )
+    }
+
+    private fun plusMinutes(dateTime: LocalDateTime, minutes: Int): LocalDateTime {
+        val totalSeconds = dateTime.time.toSecondOfDay() + minutes * SECONDS_IN_MINUTE
+        val dayOffset = totalSeconds.floorDiv(SECONDS_IN_DAY)
+        val secondOfDay = totalSeconds.mod(SECONDS_IN_DAY)
+        val shiftedDate = dateTime.date.plus(dayOffset, DateTimeUnit.DAY)
+        return LocalDateTime(shiftedDate, LocalTime.fromSecondOfDay(secondOfDay))
+    }
+
+    private companion object {
+        const val POSTPONE_MINUTES = 10
+        const val SECONDS_IN_MINUTE = 60
+        const val SECONDS_IN_DAY = 24 * 60 * 60
     }
 }

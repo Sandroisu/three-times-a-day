@@ -14,7 +14,9 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,6 +24,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -74,7 +77,12 @@ fun TodayScreen(
                 style = MaterialTheme.typography.bodyMedium
             )
 
-            else -> IntakeEventList(intakeEvents = uiState.intakeEvents)
+            else -> IntakeEventList(
+                intakeEvents = uiState.intakeEvents,
+                onMarkTaken = todayViewModel::markIntakeTaken,
+                onMarkSkipped = todayViewModel::markIntakeSkipped,
+                onPostpone = todayViewModel::postponeIntake
+            )
         }
     }
 }
@@ -92,19 +100,34 @@ private fun LoadingState() {
 }
 
 @Composable
-private fun IntakeEventList(intakeEvents: List<MedicationIntakeEvent>) {
+private fun IntakeEventList(
+    intakeEvents: List<MedicationIntakeEvent>,
+    onMarkTaken: (String) -> Unit,
+    onMarkSkipped: (String) -> Unit,
+    onPostpone: (String) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(intakeEvents) { intakeEvent ->
-            IntakeEventCard(intakeEvent = intakeEvent)
+            IntakeEventCard(
+                intakeEvent = intakeEvent,
+                onMarkTaken = onMarkTaken,
+                onMarkSkipped = onMarkSkipped,
+                onPostpone = onPostpone
+            )
         }
     }
 }
 
 @Composable
-private fun IntakeEventCard(intakeEvent: MedicationIntakeEvent) {
+private fun IntakeEventCard(
+    intakeEvent: MedicationIntakeEvent,
+    onMarkTaken: (String) -> Unit,
+    onMarkSkipped: (String) -> Unit,
+    onPostpone: (String) -> Unit
+) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -130,6 +153,39 @@ private fun IntakeEventCard(intakeEvent: MedicationIntakeEvent) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
+            IntakeEventActions(
+                intakeEvent = intakeEvent,
+                onMarkTaken = onMarkTaken,
+                onMarkSkipped = onMarkSkipped,
+                onPostpone = onPostpone
+            )
+        }
+    }
+}
+
+@Composable
+private fun IntakeEventActions(
+    intakeEvent: MedicationIntakeEvent,
+    onMarkTaken: (String) -> Unit,
+    onMarkSkipped: (String) -> Unit,
+    onPostpone: (String) -> Unit
+) {
+    val actionsVisible = intakeEvent.status == MedicationIntakeStatus.Scheduled ||
+        intakeEvent.status == MedicationIntakeStatus.Postponed
+    if (actionsVisible) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Button(onClick = { onMarkTaken(intakeEvent.eventId) }) {
+                Text(text = "Принял")
+            }
+            OutlinedButton(onClick = { onMarkSkipped(intakeEvent.eventId) }) {
+                Text(text = "Пропустить")
+            }
+            TextButton(onClick = { onPostpone(intakeEvent.eventId) }) {
+                Text(text = "Отложить")
+            }
         }
     }
 }

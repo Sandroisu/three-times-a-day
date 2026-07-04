@@ -39,7 +39,8 @@ class GenerateMedicationIntakeEventsForDateUseCase {
                 date = date,
                 time = timeForMoment(intakeRule.moment, dailySchedule),
                 medication = medication,
-                intakeMoment = intakeRule.moment
+                intakeMoment = intakeRule.moment,
+                ruleKey = intakeRule.moment.name
             )
         )
 
@@ -48,7 +49,8 @@ class GenerateMedicationIntakeEventsForDateUseCase {
                 date = date,
                 time = intakeRule.time,
                 medication = medication,
-                intakeMoment = null
+                intakeMoment = null,
+                ruleKey = EXACT_TIME_RULE_KEY
             )
         )
 
@@ -61,7 +63,8 @@ class GenerateMedicationIntakeEventsForDateUseCase {
                 date = date,
                 time = time,
                 medication = medication,
-                intakeMoment = null
+                intakeMoment = null,
+                ruleKey = SEVERAL_TIMES_RULE_KEY
             )
         }
     }
@@ -101,8 +104,10 @@ class GenerateMedicationIntakeEventsForDateUseCase {
         date: LocalDate,
         time: LocalTime,
         medication: Medication,
-        intakeMoment: MedicationIntakeMoment?
+        intakeMoment: MedicationIntakeMoment?,
+        ruleKey: String
     ): MedicationIntakeEvent = MedicationIntakeEvent(
+        eventId = buildEventId(medication.id, date, time, ruleKey),
         medicationId = medication.id,
         medicationName = medication.name,
         dosageText = medication.dosageText,
@@ -110,6 +115,17 @@ class GenerateMedicationIntakeEventsForDateUseCase {
         status = MedicationIntakeStatus.Scheduled,
         intakeMoment = intakeMoment
     )
+
+    private fun buildEventId(
+        medicationId: String,
+        date: LocalDate,
+        time: LocalTime,
+        ruleKey: String
+    ): String {
+        val hour = time.hour.toString().padStart(2, '0')
+        val minute = time.minute.toString().padStart(2, '0')
+        return "$medicationId|$date|$hour:$minute|$ruleKey"
+    }
 
     private fun shiftByMinutes(time: LocalTime, deltaMinutes: Int): LocalTime {
         val shiftedSecond = (time.toSecondOfDay() + deltaMinutes * SECONDS_IN_MINUTE)
@@ -122,5 +138,7 @@ class GenerateMedicationIntakeEventsForDateUseCase {
         const val BEFORE_SLEEP_OFFSET_MINUTES = 15
         const val SECONDS_IN_MINUTE = 60
         const val SECONDS_IN_DAY = 24 * 60 * 60
+        const val EXACT_TIME_RULE_KEY = "ExactTime"
+        const val SEVERAL_TIMES_RULE_KEY = "SeveralTimesPerDay"
     }
 }

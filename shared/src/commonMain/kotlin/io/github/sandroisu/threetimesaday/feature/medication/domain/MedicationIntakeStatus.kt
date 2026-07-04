@@ -6,6 +6,6 @@ import kotlinx.serialization.Serializable
 enum class MedicationIntakeStatus {
     Scheduled,
     Taken,
-    Postponed,
-    Missed
+    Skipped,
+    Postponed
 }

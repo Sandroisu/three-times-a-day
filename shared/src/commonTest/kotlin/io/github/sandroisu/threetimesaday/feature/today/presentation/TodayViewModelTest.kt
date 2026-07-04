@@ -4,10 +4,14 @@ import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
+import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -136,14 +140,106 @@ class TodayViewModelTest {
         assertFalse(uiState.isLoading)
     }
 
+    @Test
+    fun loadTodayAppliesStoredTakenRecord() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+        )
+        val recordRepository = FakeMedicationIntakeRecordRepository()
+        val viewModel = createViewModel(scheduleRepository, medicationRepository, recordRepository)
+        advanceUntilIdle()
+        val generatedEvent = viewModel.uiState.value.intakeEvents.single()
+        recordRepository.saveRecord(
+            MedicationIntakeRecord(
+                eventId = generatedEvent.eventId,
+                medicationId = generatedEvent.medicationId,
+                scheduledDateTime = generatedEvent.scheduledDateTime,
+                status = MedicationIntakeStatus.Taken,
+                updatedDateTime = LocalDateTime(testDate, LocalTime(8, 5)),
+                postponedDateTime = null
+            )
+        )
+
+        viewModel.loadToday()
+        advanceUntilIdle()
+
+        assertEquals(MedicationIntakeStatus.Taken, viewModel.uiState.value.intakeEvents.single().status)
+    }
+
+    @Test
+    fun markIntakeTakenSavesRecordAndUpdatesUi() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+        )
+        val recordRepository = FakeMedicationIntakeRecordRepository()
+        val viewModel = createViewModel(scheduleRepository, medicationRepository, recordRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+
+        viewModel.markIntakeTaken(eventId)
+        advanceUntilIdle()
+
+        assertEquals(MedicationIntakeStatus.Taken, viewModel.uiState.value.intakeEvents.single().status)
+        val savedRecord = recordRepository.currentRecords().single()
+        assertEquals(eventId, savedRecord.eventId)
+        assertEquals(MedicationIntakeStatus.Taken, savedRecord.status)
+    }
+
+    @Test
+    fun markIntakeSkippedSavesRecordAndUpdatesUi() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+        )
+        val recordRepository = FakeMedicationIntakeRecordRepository()
+        val viewModel = createViewModel(scheduleRepository, medicationRepository, recordRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+
+        viewModel.markIntakeSkipped(eventId)
+        advanceUntilIdle()
+
+        assertEquals(MedicationIntakeStatus.Skipped, viewModel.uiState.value.intakeEvents.single().status)
+        assertEquals(MedicationIntakeStatus.Skipped, recordRepository.currentRecords().single().status)
+    }
+
+    @Test
+    fun postponeIntakeMovesEventByTenMinutesAndUpdatesUi() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(
+            createSchedule(breakfastTime = LocalTime(8, 30))
+        )
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("breakfast", MedicationIntakeMoment.AfterBreakfast))
+        )
+        val recordRepository = FakeMedicationIntakeRecordRepository()
+        val viewModel = createViewModel(scheduleRepository, medicationRepository, recordRepository)
+        advanceUntilIdle()
+        val eventBeforePostpone = viewModel.uiState.value.intakeEvents.single()
+        assertEquals(LocalTime(8, 45), eventBeforePostpone.scheduledDateTime.time)
+
+        viewModel.postponeIntake(eventBeforePostpone.eventId)
+        advanceUntilIdle()
+
+        val eventAfterPostpone = viewModel.uiState.value.intakeEvents.single()
+        assertEquals(MedicationIntakeStatus.Postponed, eventAfterPostpone.status)
+        assertEquals(LocalTime(8, 55), eventAfterPostpone.scheduledDateTime.time)
+        val savedRecord = recordRepository.currentRecords().single()
+        assertEquals(LocalDateTime(testDate, LocalTime(8, 55)), savedRecord.postponedDateTime)
+    }
+
     private fun createViewModel(
         scheduleRepository: DailyScheduleRepository,
-        medicationRepository: MedicationRepository
+        medicationRepository: MedicationRepository,
+        recordRepository: MedicationIntakeRecordRepository = FakeMedicationIntakeRecordRepository()
     ): TodayViewModel = TodayViewModel(
         timeProvider = FakeTimeProvider(testDate),
         dailyScheduleRepository = scheduleRepository,
         medicationRepository = medicationRepository,
-        generateMedicationIntakeEventsForDate = GenerateMedicationIntakeEventsForDateUseCase()
+        medicationIntakeRecordRepository = recordRepository,
+        generateMedicationIntakeEventsForDate = GenerateMedicationIntakeEventsForDateUseCase(),
+        applyMedicationIntakeRecords = ApplyMedicationIntakeRecordsUseCase()
     )
 
     private fun createSchedule(
@@ -224,6 +320,31 @@ class TodayViewModelTest {
 
         override suspend fun deleteMedication(medicationId: String) {
             storedMedications.removeAll { it.id == medicationId }
+        }
+    }
+
+    private class FakeMedicationIntakeRecordRepository : MedicationIntakeRecordRepository {
+
+        private val storedRecords: MutableList<MedicationIntakeRecord> = mutableListOf()
+        var saveError: Throwable? = null
+
+        fun currentRecords(): List<MedicationIntakeRecord> = storedRecords.toList()
+
+        override suspend fun getRecordsForDate(date: LocalDate): List<MedicationIntakeRecord> =
+            storedRecords.filter { record -> record.scheduledDateTime.date == date }
+
+        override suspend fun saveRecord(record: MedicationIntakeRecord) {
+            saveError?.let { throw it }
+            val existingIndex = storedRecords.indexOfFirst { it.eventId == record.eventId }
+            if (existingIndex >= 0) {
+                storedRecords[existingIndex] = record
+            } else {
+                storedRecords.add(record)
+            }
+        }
+
+        override suspend fun deleteRecord(eventId: String) {
+            storedRecords.removeAll { it.eventId == eventId }
         }
     }
 }

@@ -12,7 +12,10 @@ import io.github.sandroisu.threetimesaday.feature.medication.presentation.Medica
 import io.github.sandroisu.threetimesaday.feature.schedule.data.PersistentDailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorViewModel
+import io.github.sandroisu.threetimesaday.feature.today.data.PersistentMedicationIntakeRecordRepository
+import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.viewModelOf
@@ -30,7 +33,9 @@ val commonAppModule = module {
     single<DailyScheduleRepository> { PersistentDailyScheduleRepository(get(), get()) }
     single<MedicationRepository> { PersistentMedicationRepository(get(), get()) }
     single<MedicationIdGenerator> { IncrementingMedicationIdGenerator() }
+    single<MedicationIntakeRecordRepository> { PersistentMedicationIntakeRecordRepository(get(), get()) }
     single { GenerateMedicationIntakeEventsForDateUseCase() }
+    single { ApplyMedicationIntakeRecordsUseCase() }
     viewModelOf(::TodayViewModel)
     viewModelOf(::ScheduleEditorViewModel)
     viewModelOf(::MedicationListViewModel)

@@ -10,6 +10,6 @@ fun intakeMomentLabel(intakeMoment: MedicationIntakeMoment?): String =
 fun intakeStatusLabel(status: MedicationIntakeStatus): String = when (status) {
     MedicationIntakeStatus.Scheduled -> "Запланировано"
     MedicationIntakeStatus.Taken -> "Принято"
+    MedicationIntakeStatus.Skipped -> "Пропущено"
     MedicationIntakeStatus.Postponed -> "Отложено"
-    MedicationIntakeStatus.Missed -> "Пропущено"
 }
