@@ -1,5 +1,6 @@
 package io.github.sandroisu.threetimesaday.feature.medication.data
 
+import io.github.sandroisu.threetimesaday.core.storage.KeyValueStorage
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
@@ -7,31 +8,56 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRe
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.json.Json
 
-class InMemoryMedicationRepository : MedicationRepository {
+class PersistentMedicationRepository(
+    private val keyValueStorage: KeyValueStorage,
+    private val json: Json
+) : MedicationRepository {
 
     private val mutex = Mutex()
-    private val storedMedications: MutableList<Medication> = createInitialMedications().toMutableList()
 
-    override suspend fun getMedications(): List<Medication> = mutex.withLock { storedMedications.toList() }
+    override suspend fun getMedications(): List<Medication> = mutex.withLock {
+        readMedications()
+    }
 
     override suspend fun saveMedication(medication: Medication) {
-        mutex.withLock { storedMedications.add(medication) }
+        mutex.withLock {
+            val medications = readMedications().toMutableList()
+            medications.add(medication)
+            writeMedications(medications)
+        }
     }
 
     override suspend fun updateMedication(medication: Medication) {
         mutex.withLock {
-            val existingIndex = storedMedications.indexOfFirst { it.id == medication.id }
+            val medications = readMedications().toMutableList()
+            val existingIndex = medications.indexOfFirst { it.id == medication.id }
             if (existingIndex >= 0) {
-                storedMedications[existingIndex] = medication
+                medications[existingIndex] = medication
             } else {
-                storedMedications.add(medication)
+                medications.add(medication)
             }
+            writeMedications(medications)
         }
     }
 
     override suspend fun deleteMedication(medicationId: String) {
-        mutex.withLock { storedMedications.removeAll { it.id == medicationId } }
+        mutex.withLock {
+            val medications = readMedications().toMutableList()
+            medications.removeAll { it.id == medicationId }
+            writeMedications(medications)
+        }
+    }
+
+    private fun readMedications(): List<Medication> {
+        val storedMedications = keyValueStorage.getString(MEDICATIONS_KEY) ?: return createInitialMedications()
+        return runCatching { json.decodeFromString<List<Medication>>(storedMedications) }
+            .getOrElse { createInitialMedications() }
+    }
+
+    private fun writeMedications(medications: List<Medication>) {
+        keyValueStorage.putString(MEDICATIONS_KEY, json.encodeToString(medications))
     }
 
     private fun createInitialMedications(): List<Medication> {
@@ -62,5 +88,9 @@ class InMemoryMedicationRepository : MedicationRepository {
                 courseEndDate = null
             )
         )
+    }
+
+    private companion object {
+        const val MEDICATIONS_KEY = "medications"
     }
 }

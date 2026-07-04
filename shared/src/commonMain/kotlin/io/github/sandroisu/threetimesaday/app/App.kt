@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import io.github.sandroisu.threetimesaday.core.di.commonAppModule
+import io.github.sandroisu.threetimesaday.core.storage.KeyValueStorage
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationEditorScreen
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationListScreen
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorScreen
@@ -14,6 +15,7 @@ import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
 import org.koin.compose.KoinApplication
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.dsl.module
 
 private enum class AppScreen {
     Today,
@@ -23,8 +25,11 @@ private enum class AppScreen {
 }
 
 @Composable
-fun App() {
-    KoinApplication(application = { modules(commonAppModule) }) {
+fun App(keyValueStorage: KeyValueStorage) {
+    val storageModule = module {
+        single { keyValueStorage }
+    }
+    KoinApplication(application = { modules(commonAppModule, storageModule) }) {
         MaterialTheme {
             var currentScreen by remember { mutableStateOf(AppScreen.Today) }
             var selectedMedicationId by remember { mutableStateOf<String?>(null) }
