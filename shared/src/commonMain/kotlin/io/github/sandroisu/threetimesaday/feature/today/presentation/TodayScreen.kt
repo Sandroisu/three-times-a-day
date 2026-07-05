@@ -23,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
 import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
@@ -64,6 +65,17 @@ fun TodayScreen(
                 Text(text = "Препараты")
             }
         }
+        NotificationStatusBlock(
+            permissionStatus = uiState.notificationPermissionStatus,
+            onEnableNotificationsClick = todayViewModel::requestNotificationPermission
+        )
+        if (uiState.notificationErrorMessage != null) {
+            Text(
+                text = uiState.notificationErrorMessage.orEmpty(),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
         when {
             uiState.isLoading -> LoadingState()
             uiState.errorMessage != null -> Text(
@@ -84,6 +96,32 @@ fun TodayScreen(
                 onPostpone = todayViewModel::postponeIntake
             )
         }
+    }
+}
+
+@Composable
+private fun NotificationStatusBlock(
+    permissionStatus: NotificationPermissionStatus,
+    onEnableNotificationsClick: () -> Unit
+) {
+    when (permissionStatus) {
+        NotificationPermissionStatus.NotDetermined -> Button(onClick = onEnableNotificationsClick) {
+            Text(text = "Включить уведомления")
+        }
+
+        NotificationPermissionStatus.Denied -> Text(
+            text = "Уведомления выключены",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        NotificationPermissionStatus.Granted -> Text(
+            text = "Уведомления включены",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        NotificationPermissionStatus.NotSupported -> Unit
     }
 }
 

@@ -2,6 +2,9 @@ package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sandroisu.threetimesaday.core.notification.MEDICATION_REMINDER_ID_PREFIX
+import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderNotification
+import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderScheduler
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.core.time.formatScreenDate
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
@@ -29,7 +32,8 @@ class TodayViewModel(
     private val medicationRepository: MedicationRepository,
     private val medicationIntakeRecordRepository: MedicationIntakeRecordRepository,
     private val generateMedicationIntakeEventsForDate: GenerateMedicationIntakeEventsForDateUseCase,
-    private val applyMedicationIntakeRecords: ApplyMedicationIntakeRecordsUseCase
+    private val applyMedicationIntakeRecords: ApplyMedicationIntakeRecordsUseCase,
+    private val medicationReminderScheduler: MedicationReminderScheduler
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
@@ -63,6 +67,8 @@ class TodayViewModel(
                         errorMessage = null
                     )
                 }
+                refreshPermissionStatus()
+                rescheduleReminders(intakeEvents)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (loadFailure: Exception) {
@@ -70,6 +76,27 @@ class TodayViewModel(
                     currentState.copy(
                         isLoading = false,
                         errorMessage = loadFailure.message ?: "Не удалось загрузить приёмы"
+                    )
+                }
+            }
+        }
+    }
+
+    fun requestNotificationPermission() {
+        viewModelScope.launch {
+            try {
+                val permissionStatus = medicationReminderScheduler.requestPermission()
+                mutableUiState.update { currentState ->
+                    currentState.copy(notificationPermissionStatus = permissionStatus)
+                }
+                loadToday()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (permissionFailure: Exception) {
+                mutableUiState.update { currentState ->
+                    currentState.copy(
+                        notificationErrorMessage = permissionFailure.message
+                            ?: "Не удалось запросить разрешение на уведомления"
                     )
                 }
             }
@@ -94,7 +121,6 @@ class TodayViewModel(
         viewModelScope.launch {
             try {
                 medicationIntakeRecordRepository.saveRecord(buildRecord(targetEvent, status))
-                loadToday()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (saveFailure: Exception) {
@@ -103,7 +129,12 @@ class TodayViewModel(
                         errorMessage = saveFailure.message ?: "Не удалось сохранить статус приёма"
                     )
                 }
+                return@launch
             }
+            runReminderUpdate {
+                medicationReminderScheduler.cancelReminder(reminderIdFor(eventId))
+            }
+            loadToday()
         }
     }
 
@@ -123,6 +154,51 @@ class TodayViewModel(
             postponedDateTime = postponedDateTime
         )
     }
+
+    private suspend fun refreshPermissionStatus() {
+        runReminderUpdate {
+            val permissionStatus = medicationReminderScheduler.getPermissionStatus()
+            mutableUiState.update { currentState ->
+                currentState.copy(notificationPermissionStatus = permissionStatus)
+            }
+        }
+    }
+
+    private suspend fun rescheduleReminders(intakeEvents: List<MedicationIntakeEvent>) {
+        runReminderUpdate {
+            medicationReminderScheduler.cancelAllReminders()
+            val currentDateTime = timeProvider.currentDateTime()
+            intakeEvents
+                .filter { event -> event.status == MedicationIntakeStatus.Scheduled || event.status == MedicationIntakeStatus.Postponed }
+                .filter { event -> event.scheduledDateTime > currentDateTime }
+                .forEach { event -> medicationReminderScheduler.scheduleReminder(buildNotification(event)) }
+        }
+    }
+
+    private fun buildNotification(event: MedicationIntakeEvent): MedicationReminderNotification =
+        MedicationReminderNotification(
+            notificationId = reminderIdFor(event.eventId),
+            title = event.medicationName,
+            message = "${event.dosageText} · ${intakeMomentLabel(event.intakeMoment)}",
+            scheduledDateTime = event.scheduledDateTime
+        )
+
+    private suspend fun runReminderUpdate(action: suspend () -> Unit) {
+        try {
+            action()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (notificationFailure: Exception) {
+            mutableUiState.update { currentState ->
+                currentState.copy(
+                    notificationErrorMessage = notificationFailure.message
+                        ?: "Не удалось обновить уведомления"
+                )
+            }
+        }
+    }
+
+    private fun reminderIdFor(eventId: String): String = MEDICATION_REMINDER_ID_PREFIX + eventId
 
     private fun plusMinutes(dateTime: LocalDateTime, minutes: Int): LocalDateTime {
         val totalSeconds = dateTime.time.toSecondOfDay() + minutes * SECONDS_IN_MINUTE

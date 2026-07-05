@@ -15,6 +15,7 @@ import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
 import org.koin.compose.KoinApplication
 import org.koin.compose.viewmodel.koinViewModel
+import org.koin.core.module.Module
 import org.koin.dsl.module
 
 private enum class AppScreen {
@@ -25,11 +26,11 @@ private enum class AppScreen {
 }
 
 @Composable
-fun App(keyValueStorage: KeyValueStorage) {
+fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
     val storageModule = module {
         single { keyValueStorage }
     }
-    KoinApplication(application = { modules(commonAppModule, storageModule) }) {
+    KoinApplication(application = { modules(commonAppModule, storageModule, platformModule) }) {
         MaterialTheme {
             var currentScreen by remember { mutableStateOf(AppScreen.Today) }
             var selectedMedicationId by remember { mutableStateOf<String?>(null) }

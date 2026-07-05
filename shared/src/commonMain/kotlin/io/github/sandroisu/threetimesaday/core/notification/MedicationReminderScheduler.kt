@@ -1,12 +1,14 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
-import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
-
 interface MedicationReminderScheduler {
 
-    suspend fun scheduleReminder(intakeEvent: MedicationIntakeEvent)
+    suspend fun getPermissionStatus(): NotificationPermissionStatus
 
-    suspend fun cancelReminder(medicationId: String)
+    suspend fun requestPermission(): NotificationPermissionStatus
+
+    suspend fun scheduleReminder(notification: MedicationReminderNotification)
+
+    suspend fun cancelReminder(notificationId: String)
 
     suspend fun cancelAllReminders()
 }
