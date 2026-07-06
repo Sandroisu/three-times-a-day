@@ -9,7 +9,7 @@ fun androidReminderModule(
     permissionController: AndroidNotificationPermissionController
 ): Module = module {
     single<MedicationReminderScheduler> {
-        AndroidMedicationReminderScheduler(context, permissionController)
+        AndroidMedicationReminderScheduler(context, permissionController, get())
     }
 }
 

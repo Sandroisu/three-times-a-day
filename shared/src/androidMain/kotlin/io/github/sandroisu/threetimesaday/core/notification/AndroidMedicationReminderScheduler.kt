@@ -9,18 +9,14 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
 class AndroidMedicationReminderScheduler(
     private val context: Context,
-    private val permissionController: AndroidNotificationPermissionController
+    private val permissionController: AndroidNotificationPermissionController,
+    private val reminderRegistry: MedicationReminderRegistry
 ) : MedicationReminderScheduler {
-
-    private val mutex = Mutex()
-    private val scheduledNotificationIds = mutableSetOf<String>()
 
     init {
         ensureChannel()
@@ -53,27 +49,44 @@ class AndroidMedicationReminderScheduler(
     }
 
     override suspend fun scheduleReminder(notification: MedicationReminderNotification) {
-        mutex.withLock { scheduledNotificationIds.add(notification.notificationId) }
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
         val triggerAtMillis = notification.scheduledDateTime
             .toInstant(TimeZone.currentSystemDefault())
             .toEpochMilliseconds()
         val pendingIntent = buildPendingIntent(notification)
         val useExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
-        try {
+        val scheduled = try {
             if (useExact) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
             } else {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
             }
+            true
         } catch (exactAlarmDenied: SecurityException) {
-            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+            runCatching {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+            }.isSuccess
+        }
+        if (scheduled) {
+            reminderRegistry.addReminderId(notification.notificationId)
         }
     }
 
     override suspend fun cancelReminder(notificationId: String) {
-        mutex.withLock { scheduledNotificationIds.remove(notificationId) }
-        val requestCode = requestCodeFor(notificationId)
+        cancelSystemReminder(notificationId)
+        reminderRegistry.removeReminderId(notificationId)
+    }
+
+    override suspend fun cancelAllReminders() {
+        val idsToCancel = reminderRegistry.getReminderIds()
+        idsToCancel.forEach { notificationId ->
+            runCatching { cancelSystemReminder(notificationId) }
+        }
+        reminderRegistry.clear()
+    }
+
+    private fun cancelSystemReminder(notificationId: String) {
+        val requestCode = reminderRequestCode(notificationId)
         val alarmManager = context.getSystemService(AlarmManager::class.java)
         val existingIntent = PendingIntent.getBroadcast(
             context,
@@ -88,13 +101,8 @@ class AndroidMedicationReminderScheduler(
         context.getSystemService(NotificationManager::class.java)?.cancel(requestCode)
     }
 
-    override suspend fun cancelAllReminders() {
-        val idsToCancel = mutex.withLock { scheduledNotificationIds.toList() }
-        idsToCancel.forEach { notificationId -> cancelReminder(notificationId) }
-    }
-
     private fun buildPendingIntent(notification: MedicationReminderNotification): PendingIntent {
-        val requestCode = requestCodeFor(notification.notificationId)
+        val requestCode = reminderRequestCode(notification.notificationId)
         val intent = reminderIntent().apply {
             putExtra(MedicationReminderReceiver.EXTRA_TITLE, notification.title)
             putExtra(MedicationReminderReceiver.EXTRA_MESSAGE, notification.message)
@@ -111,8 +119,6 @@ class AndroidMedicationReminderScheduler(
     private fun reminderIntent(): Intent = Intent(context, MedicationReminderReceiver::class.java).apply {
         action = ACTION_MEDICATION_REMINDER
     }
-
-    private fun requestCodeFor(notificationId: String): Int = notificationId.hashCode()
 
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

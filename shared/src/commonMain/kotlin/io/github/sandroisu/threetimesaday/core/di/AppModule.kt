@@ -1,6 +1,8 @@
 package io.github.sandroisu.threetimesaday.core.di
 
 import io.github.sandroisu.threetimesaday.core.network.HttpClientFactory
+import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderRegistry
+import io.github.sandroisu.threetimesaday.core.notification.PersistentMedicationReminderRegistry
 import io.github.sandroisu.threetimesaday.core.time.SystemTimeProvider
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.feature.medication.data.IncrementingMedicationIdGenerator
@@ -30,6 +32,7 @@ val commonAppModule = module {
         }
     }
     single<TimeProvider> { SystemTimeProvider() }
+    single<MedicationReminderRegistry> { PersistentMedicationReminderRegistry(get(), get()) }
     single<DailyScheduleRepository> { PersistentDailyScheduleRepository(get(), get()) }
     single<MedicationRepository> { PersistentMedicationRepository(get(), get()) }
     single<MedicationIdGenerator> { IncrementingMedicationIdGenerator() }
