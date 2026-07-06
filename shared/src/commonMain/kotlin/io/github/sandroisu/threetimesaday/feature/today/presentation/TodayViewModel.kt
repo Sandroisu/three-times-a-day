@@ -50,6 +50,7 @@ class TodayViewModel(
             }
             try {
                 val currentDate = timeProvider.currentDate()
+                val currentDateTime = timeProvider.currentDateTime()
                 val dailySchedule = dailyScheduleRepository.getDailySchedule()
                 val medications = medicationRepository.getMedications()
                 val generatedEvents = generateMedicationIntakeEventsForDate(
@@ -64,6 +65,7 @@ class TodayViewModel(
                         isLoading = false,
                         dateTitle = formatScreenDate(currentDate),
                         intakeEvents = intakeEvents,
+                        currentDateTime = currentDateTime,
                         errorMessage = null
                     )
                 }

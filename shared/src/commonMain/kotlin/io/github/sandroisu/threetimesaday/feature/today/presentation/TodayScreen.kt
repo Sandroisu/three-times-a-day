@@ -34,6 +34,7 @@ import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissi
 import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
+import kotlinx.datetime.LocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val HIGHLIGHT_VISIBLE_MILLIS = 2500L
@@ -101,6 +102,7 @@ fun TodayScreen(
             else -> IntakeEventList(
                 intakeEvents = uiState.intakeEvents,
                 highlightedEventId = uiState.highlightedEventId,
+                currentDateTime = uiState.currentDateTime,
                 onMarkTaken = todayViewModel::markIntakeTaken,
                 onMarkSkipped = todayViewModel::markIntakeSkipped,
                 onPostpone = todayViewModel::postponeIntake,
@@ -152,6 +154,7 @@ private fun LoadingState() {
 private fun IntakeEventList(
     intakeEvents: List<MedicationIntakeEvent>,
     highlightedEventId: String?,
+    currentDateTime: LocalDateTime?,
     onMarkTaken: (String) -> Unit,
     onMarkSkipped: (String) -> Unit,
     onPostpone: (String) -> Unit,
@@ -179,6 +182,8 @@ private fun IntakeEventList(
             IntakeEventCard(
                 intakeEvent = intakeEvent,
                 isHighlighted = intakeEvent.eventId == highlightedEventId,
+                isExpired = currentDateTime != null &&
+                    isMedicationIntakeEventExpired(intakeEvent, currentDateTime),
                 onMarkTaken = onMarkTaken,
                 onMarkSkipped = onMarkSkipped,
                 onPostpone = onPostpone
@@ -191,6 +196,7 @@ private fun IntakeEventList(
 private fun IntakeEventCard(
     intakeEvent: MedicationIntakeEvent,
     isHighlighted: Boolean,
+    isExpired: Boolean,
     onMarkTaken: (String) -> Unit,
     onMarkSkipped: (String) -> Unit,
     onPostpone: (String) -> Unit
@@ -236,12 +242,20 @@ private fun IntakeEventCard(
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.primary
             )
-            IntakeEventActions(
-                intakeEvent = intakeEvent,
-                onMarkTaken = onMarkTaken,
-                onMarkSkipped = onMarkSkipped,
-                onPostpone = onPostpone
-            )
+            if (isExpired) {
+                Text(
+                    text = "Сегодня уже прошло",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                IntakeEventActions(
+                    intakeEvent = intakeEvent,
+                    onMarkTaken = onMarkTaken,
+                    onMarkSkipped = onMarkSkipped,
+                    onPostpone = onPostpone
+                )
+            }
         }
     }
 }

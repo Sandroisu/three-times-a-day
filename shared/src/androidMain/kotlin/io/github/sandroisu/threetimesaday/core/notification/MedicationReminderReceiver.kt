@@ -1,5 +1,6 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
+import android.Manifest
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -7,6 +8,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 
 class MedicationReminderReceiver : BroadcastReceiver() {
@@ -17,6 +19,9 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         val notificationId = intent.getStringExtra(EXTRA_NOTIFICATION_ID).orEmpty()
         val notificationRequestCode = intent.getIntExtra(EXTRA_NOTIFICATION_REQUEST_CODE, 0)
         val notificationManager = context.getSystemService(NotificationManager::class.java) ?: return
+        if (!hasPostNotificationsPermission(context)) {
+            return
+        }
         ensureChannel(notificationManager)
         val notification = buildNotification(
             context = context,
@@ -27,6 +32,13 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         )
         notificationManager.notify(notificationRequestCode, notification)
     }
+
+    private fun hasPostNotificationsPermission(context: Context): Boolean =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
 
     private fun ensureChannel(notificationManager: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
