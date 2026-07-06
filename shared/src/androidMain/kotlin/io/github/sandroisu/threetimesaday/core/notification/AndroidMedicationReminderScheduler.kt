@@ -106,6 +106,7 @@ class AndroidMedicationReminderScheduler(
         val intent = reminderIntent().apply {
             putExtra(MedicationReminderReceiver.EXTRA_TITLE, notification.title)
             putExtra(MedicationReminderReceiver.EXTRA_MESSAGE, notification.message)
+            putExtra(MedicationReminderReceiver.EXTRA_NOTIFICATION_ID, notification.notificationId)
             putExtra(MedicationReminderReceiver.EXTRA_NOTIFICATION_REQUEST_CODE, requestCode)
         }
         return PendingIntent.getBroadcast(

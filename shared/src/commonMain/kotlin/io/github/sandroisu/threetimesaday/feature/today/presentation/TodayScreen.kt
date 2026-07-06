@@ -5,29 +5,38 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.delay
 import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
 import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import org.koin.compose.viewmodel.koinViewModel
+
+private const val HIGHLIGHT_VISIBLE_MILLIS = 2500L
 
 @Composable
 fun TodayScreen(
@@ -91,9 +100,11 @@ fun TodayScreen(
 
             else -> IntakeEventList(
                 intakeEvents = uiState.intakeEvents,
+                highlightedEventId = uiState.highlightedEventId,
                 onMarkTaken = todayViewModel::markIntakeTaken,
                 onMarkSkipped = todayViewModel::markIntakeSkipped,
-                onPostpone = todayViewModel::postponeIntake
+                onPostpone = todayViewModel::postponeIntake,
+                onHighlightShown = todayViewModel::clearHighlightedEvent
             )
         }
     }
@@ -140,17 +151,34 @@ private fun LoadingState() {
 @Composable
 private fun IntakeEventList(
     intakeEvents: List<MedicationIntakeEvent>,
+    highlightedEventId: String?,
     onMarkTaken: (String) -> Unit,
     onMarkSkipped: (String) -> Unit,
-    onPostpone: (String) -> Unit
+    onPostpone: (String) -> Unit,
+    onHighlightShown: () -> Unit
 ) {
+    val listState = rememberLazyListState()
+    LaunchedEffect(highlightedEventId, intakeEvents) {
+        if (highlightedEventId == null) {
+            return@LaunchedEffect
+        }
+        val highlightedIndex = intakeEvents.indexOfFirst { event -> event.eventId == highlightedEventId }
+        if (highlightedIndex < 0) {
+            return@LaunchedEffect
+        }
+        listState.animateScrollToItem(highlightedIndex)
+        delay(HIGHLIGHT_VISIBLE_MILLIS)
+        onHighlightShown()
+    }
     LazyColumn(
         modifier = Modifier.fillMaxWidth(),
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(intakeEvents) { intakeEvent ->
             IntakeEventCard(
                 intakeEvent = intakeEvent,
+                isHighlighted = intakeEvent.eventId == highlightedEventId,
                 onMarkTaken = onMarkTaken,
                 onMarkSkipped = onMarkSkipped,
                 onPostpone = onPostpone
@@ -162,11 +190,28 @@ private fun IntakeEventList(
 @Composable
 private fun IntakeEventCard(
     intakeEvent: MedicationIntakeEvent,
+    isHighlighted: Boolean,
     onMarkTaken: (String) -> Unit,
     onMarkSkipped: (String) -> Unit,
     onPostpone: (String) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    val cardColors = if (isHighlighted) {
+        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+    } else {
+        CardDefaults.cardColors()
+    }
+    val cardModifier = if (isHighlighted) {
+        Modifier
+            .fillMaxWidth()
+            .border(
+                width = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+                shape = RoundedCornerShape(12.dp)
+            )
+    } else {
+        Modifier.fillMaxWidth()
+    }
+    Card(modifier = cardModifier, colors = cardColors) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()

@@ -10,5 +10,6 @@ data class TodayUiState(
     val intakeEvents: List<MedicationIntakeEvent> = emptyList(),
     val errorMessage: String? = null,
     val notificationPermissionStatus: NotificationPermissionStatus = NotificationPermissionStatus.NotDetermined,
-    val notificationErrorMessage: String? = null
+    val notificationErrorMessage: String? = null,
+    val highlightedEventId: String? = null
 )

@@ -376,6 +376,38 @@ class TodayViewModelTest {
         assertNotNull(viewModel.uiState.value.notificationErrorMessage)
     }
 
+    @Test
+    fun highlightEventUpdatesHighlightedEventId() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+        )
+        val viewModel = createViewModel(scheduleRepository, medicationRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+
+        viewModel.highlightEvent(eventId)
+
+        assertEquals(eventId, viewModel.uiState.value.highlightedEventId)
+    }
+
+    @Test
+    fun loadTodayDoesNotResetHighlightedEventId() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+        )
+        val viewModel = createViewModel(scheduleRepository, medicationRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+        viewModel.highlightEvent(eventId)
+
+        viewModel.loadToday()
+        advanceUntilIdle()
+
+        assertEquals(eventId, viewModel.uiState.value.highlightedEventId)
+    }
+
     private fun recordFor(
         event: MedicationIntakeEvent,
         status: MedicationIntakeStatus

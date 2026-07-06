@@ -82,6 +82,18 @@ class TodayViewModel(
         }
     }
 
+    fun highlightEvent(eventId: String) {
+        mutableUiState.update { currentState ->
+            currentState.copy(highlightedEventId = eventId)
+        }
+    }
+
+    fun clearHighlightedEvent() {
+        mutableUiState.update { currentState ->
+            currentState.copy(highlightedEventId = null)
+        }
+    }
+
     fun requestNotificationPermission() {
         viewModelScope.launch {
             try {

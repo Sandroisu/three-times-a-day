@@ -16,6 +16,9 @@ import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNUserNotificationCenter
 import kotlin.coroutines.resume
 
+const val NOTIFICATION_USER_INFO_ID_KEY = "notificationId"
+const val NOTIFICATION_USER_INFO_EVENT_ID_KEY = "eventId"
+
 class IosMedicationReminderScheduler : MedicationReminderScheduler {
 
     private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
@@ -53,6 +56,13 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
         val content = UNMutableNotificationContent()
         content.setTitle(notification.title)
         content.setBody(notification.message)
+        val eventId = notification.notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX)
+        content.setUserInfo(
+            mapOf<Any?, Any?>(
+                NOTIFICATION_USER_INFO_ID_KEY to notification.notificationId,
+                NOTIFICATION_USER_INFO_EVENT_ID_KEY to eventId
+            )
+        )
         val dateComponents = NSDateComponents().apply {
             year = notification.scheduledDateTime.year.toLong()
             month = notification.scheduledDateTime.monthNumber.toLong()
