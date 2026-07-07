@@ -5,6 +5,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
 
+internal const val MEDICATION_REMINDER_LAUNCH_DATA_KEY = "medication_reminder_launch_data"
+
 class PersistentMedicationReminderLaunchRepository(
     private val keyValueStorage: KeyValueStorage,
     private val json: Json
@@ -14,18 +16,15 @@ class PersistentMedicationReminderLaunchRepository(
 
     override suspend fun saveLaunchData(launchData: MedicationReminderLaunchData) {
         mutex.withLock {
-            keyValueStorage.putString(LAUNCH_DATA_KEY, json.encodeToString(launchData))
+            keyValueStorage.putString(MEDICATION_REMINDER_LAUNCH_DATA_KEY, json.encodeToString(launchData))
         }
     }
 
     override suspend fun consumeLaunchData(): MedicationReminderLaunchData? = mutex.withLock {
-        val storedLaunchData = keyValueStorage.getString(LAUNCH_DATA_KEY) ?: return@withLock null
-        keyValueStorage.remove(LAUNCH_DATA_KEY)
+        val storedLaunchData = keyValueStorage.getString(MEDICATION_REMINDER_LAUNCH_DATA_KEY)
+            ?: return@withLock null
+        keyValueStorage.remove(MEDICATION_REMINDER_LAUNCH_DATA_KEY)
         runCatching { json.decodeFromString<MedicationReminderLaunchData>(storedLaunchData) }
             .getOrNull()
-    }
-
-    private companion object {
-        const val LAUNCH_DATA_KEY = "medication_reminder_launch_data"
     }
 }
