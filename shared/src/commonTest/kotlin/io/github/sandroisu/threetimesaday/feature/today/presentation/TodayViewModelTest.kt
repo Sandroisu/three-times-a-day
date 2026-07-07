@@ -17,6 +17,7 @@ import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicatio
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
+import io.github.sandroisu.threetimesaday.feature.today.domain.RescheduleMedicationRemindersUseCase
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -249,9 +250,12 @@ class TodayViewModelTest {
 
         advanceUntilIdle()
 
-        val scheduledNotification = reminderScheduler.scheduledNotifications.single()
         val eventId = viewModel.uiState.value.intakeEvents.single().eventId
-        assertEquals(MEDICATION_REMINDER_ID_PREFIX + eventId, scheduledNotification.notificationId)
+        assertTrue(
+            reminderScheduler.scheduledNotifications.any { notification ->
+                notification.notificationId == MEDICATION_REMINDER_ID_PREFIX + eventId
+            }
+        )
         assertTrue(reminderScheduler.cancelAllCount >= 1)
     }
 
@@ -260,8 +264,8 @@ class TodayViewModelTest {
         val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
         val medicationRepository = FakeMedicationRepository(
             listOf(
-                createMedication("wake", MedicationIntakeMoment.AfterWakeUp),
-                createMedication("breakfast", MedicationIntakeMoment.AfterBreakfast)
+                createMedication("wake", MedicationIntakeMoment.AfterWakeUp, courseEndDate = testDate),
+                createMedication("breakfast", MedicationIntakeMoment.AfterBreakfast, courseEndDate = testDate)
             )
         )
         val recordRepository = FakeMedicationIntakeRecordRepository()
@@ -284,10 +288,10 @@ class TodayViewModelTest {
     }
 
     @Test
-    fun markIntakeTakenCancelsReminder() = runTest(testDispatcher) {
+    fun markIntakeTakenRemovesReminderForEvent() = runTest(testDispatcher) {
         val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
         val medicationRepository = FakeMedicationRepository(
-            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp, courseEndDate = testDate))
         )
         val reminderScheduler = FakeMedicationReminderScheduler()
         val viewModel = createViewModel(
@@ -301,14 +305,19 @@ class TodayViewModelTest {
         viewModel.markIntakeTaken(eventId)
         advanceUntilIdle()
 
-        assertTrue(reminderScheduler.canceledNotificationIds.contains(MEDICATION_REMINDER_ID_PREFIX + eventId))
+        assertTrue(reminderScheduler.cancelAllCount >= 1)
+        assertTrue(
+            reminderScheduler.scheduledNotifications.none { notification ->
+                notification.notificationId == MEDICATION_REMINDER_ID_PREFIX + eventId
+            }
+        )
     }
 
     @Test
-    fun markIntakeSkippedCancelsReminder() = runTest(testDispatcher) {
+    fun markIntakeSkippedRemovesReminderForEvent() = runTest(testDispatcher) {
         val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
         val medicationRepository = FakeMedicationRepository(
-            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp, courseEndDate = testDate))
         )
         val reminderScheduler = FakeMedicationReminderScheduler()
         val viewModel = createViewModel(
@@ -322,16 +331,21 @@ class TodayViewModelTest {
         viewModel.markIntakeSkipped(eventId)
         advanceUntilIdle()
 
-        assertTrue(reminderScheduler.canceledNotificationIds.contains(MEDICATION_REMINDER_ID_PREFIX + eventId))
+        assertTrue(reminderScheduler.cancelAllCount >= 1)
+        assertTrue(
+            reminderScheduler.scheduledNotifications.none { notification ->
+                notification.notificationId == MEDICATION_REMINDER_ID_PREFIX + eventId
+            }
+        )
     }
 
     @Test
-    fun postponeIntakeCancelsOldReminderAndSchedulesPostponedReminder() = runTest(testDispatcher) {
+    fun postponeIntakeSchedulesPostponedReminder() = runTest(testDispatcher) {
         val scheduleRepository = FakeDailyScheduleRepository(
             createSchedule(breakfastTime = LocalTime(8, 30))
         )
         val medicationRepository = FakeMedicationRepository(
-            listOf(createMedication("breakfast", MedicationIntakeMoment.AfterBreakfast))
+            listOf(createMedication("breakfast", MedicationIntakeMoment.AfterBreakfast, courseEndDate = testDate))
         )
         val reminderScheduler = FakeMedicationReminderScheduler()
         val viewModel = createViewModel(
@@ -345,7 +359,7 @@ class TodayViewModelTest {
         viewModel.postponeIntake(eventId)
         advanceUntilIdle()
 
-        assertTrue(reminderScheduler.canceledNotificationIds.contains(MEDICATION_REMINDER_ID_PREFIX + eventId))
+        assertTrue(reminderScheduler.cancelAllCount >= 1)
         val postponedNotification = reminderScheduler.scheduledNotifications.single()
         assertEquals(MEDICATION_REMINDER_ID_PREFIX + eventId, postponedNotification.notificationId)
         assertEquals(LocalTime(8, 55), postponedNotification.scheduledDateTime.time)
@@ -374,6 +388,27 @@ class TodayViewModelTest {
 
         assertEquals(MedicationIntakeStatus.Taken, recordRepository.currentRecords().single().status)
         assertNotNull(viewModel.uiState.value.notificationErrorMessage)
+    }
+
+    @Test
+    fun loadTodayRescheduleFailureSetsNotificationErrorWithoutBreakingEvents() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))
+        )
+        val reminderScheduler = FakeMedicationReminderScheduler()
+        reminderScheduler.scheduleError = IllegalStateException("Планировщик недоступен")
+        val viewModel = createViewModel(
+            scheduleRepository = scheduleRepository,
+            medicationRepository = medicationRepository,
+            reminderScheduler = reminderScheduler
+        )
+
+        advanceUntilIdle()
+
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState.intakeEvents.isNotEmpty())
+        assertNotNull(uiState.notificationErrorMessage)
     }
 
     @Test
@@ -425,15 +460,31 @@ class TodayViewModelTest {
         medicationRepository: MedicationRepository,
         recordRepository: MedicationIntakeRecordRepository = FakeMedicationIntakeRecordRepository(),
         reminderScheduler: MedicationReminderScheduler = FakeMedicationReminderScheduler()
-    ): TodayViewModel = TodayViewModel(
-        timeProvider = FakeTimeProvider(testDate),
-        dailyScheduleRepository = scheduleRepository,
-        medicationRepository = medicationRepository,
-        medicationIntakeRecordRepository = recordRepository,
-        generateMedicationIntakeEventsForDate = GenerateMedicationIntakeEventsForDateUseCase(),
-        applyMedicationIntakeRecords = ApplyMedicationIntakeRecordsUseCase(),
-        medicationReminderScheduler = reminderScheduler
-    )
+    ): TodayViewModel {
+        val timeProvider = FakeTimeProvider(testDate)
+        val generateEvents = GenerateMedicationIntakeEventsForDateUseCase()
+        val applyRecords = ApplyMedicationIntakeRecordsUseCase()
+        val rescheduleReminders = RescheduleMedicationRemindersUseCase(
+            dailyScheduleRepository = scheduleRepository,
+            medicationRepository = medicationRepository,
+            medicationIntakeRecordRepository = recordRepository,
+            generateMedicationIntakeEventsForDate = generateEvents,
+            applyMedicationIntakeRecords = applyRecords,
+            medicationReminderScheduler = reminderScheduler,
+            timeProvider = timeProvider,
+            buildReminderMessage = { event -> "${event.dosageText} · ${event.medicationName}" }
+        )
+        return TodayViewModel(
+            timeProvider = timeProvider,
+            dailyScheduleRepository = scheduleRepository,
+            medicationRepository = medicationRepository,
+            medicationIntakeRecordRepository = recordRepository,
+            generateMedicationIntakeEventsForDate = generateEvents,
+            applyMedicationIntakeRecords = applyRecords,
+            medicationReminderScheduler = reminderScheduler,
+            rescheduleMedicationReminders = rescheduleReminders
+        )
+    }
 
     private fun createSchedule(
         wakeUpTime: LocalTime = LocalTime(8, 0),
@@ -451,14 +502,15 @@ class TodayViewModelTest {
 
     private fun createMedication(
         medicationId: String,
-        intakeMoment: MedicationIntakeMoment
+        intakeMoment: MedicationIntakeMoment,
+        courseEndDate: LocalDate? = null
     ): Medication = Medication(
         id = medicationId,
         name = "Препарат $medicationId",
         dosageText = "1 таблетка",
         intakeRule = MedicationIntakeRule.AtMoment(intakeMoment),
         courseStartDate = LocalDate(2020, 1, 1),
-        courseEndDate = null
+        courseEndDate = courseEndDate
     )
 
     private class FakeTimeProvider(

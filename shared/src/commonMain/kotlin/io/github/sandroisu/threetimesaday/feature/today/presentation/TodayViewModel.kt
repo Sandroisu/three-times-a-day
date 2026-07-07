@@ -2,11 +2,10 @@ package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.github.sandroisu.threetimesaday.core.notification.MEDICATION_REMINDER_ID_PREFIX
-import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderNotification
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderScheduler
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.core.time.formatScreenDate
+import io.github.sandroisu.threetimesaday.core.time.plusMinutes
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
@@ -15,16 +14,14 @@ import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicatio
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
+import io.github.sandroisu.threetimesaday.feature.today.domain.RescheduleMedicationRemindersUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.plus
 
 class TodayViewModel(
     private val timeProvider: TimeProvider,
@@ -33,7 +30,8 @@ class TodayViewModel(
     private val medicationIntakeRecordRepository: MedicationIntakeRecordRepository,
     private val generateMedicationIntakeEventsForDate: GenerateMedicationIntakeEventsForDateUseCase,
     private val applyMedicationIntakeRecords: ApplyMedicationIntakeRecordsUseCase,
-    private val medicationReminderScheduler: MedicationReminderScheduler
+    private val medicationReminderScheduler: MedicationReminderScheduler,
+    private val rescheduleMedicationReminders: RescheduleMedicationRemindersUseCase
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
@@ -70,7 +68,7 @@ class TodayViewModel(
                     )
                 }
                 refreshPermissionStatus()
-                rescheduleReminders(intakeEvents)
+                runReminderUpdate { rescheduleMedicationReminders() }
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (loadFailure: Exception) {
@@ -145,9 +143,6 @@ class TodayViewModel(
                 }
                 return@launch
             }
-            runReminderUpdate {
-                medicationReminderScheduler.cancelReminder(reminderIdFor(eventId))
-            }
             loadToday()
         }
     }
@@ -178,25 +173,6 @@ class TodayViewModel(
         }
     }
 
-    private suspend fun rescheduleReminders(intakeEvents: List<MedicationIntakeEvent>) {
-        runReminderUpdate {
-            medicationReminderScheduler.cancelAllReminders()
-            val currentDateTime = timeProvider.currentDateTime()
-            intakeEvents
-                .filter { event -> event.status == MedicationIntakeStatus.Scheduled || event.status == MedicationIntakeStatus.Postponed }
-                .filter { event -> event.scheduledDateTime > currentDateTime }
-                .forEach { event -> medicationReminderScheduler.scheduleReminder(buildNotification(event)) }
-        }
-    }
-
-    private fun buildNotification(event: MedicationIntakeEvent): MedicationReminderNotification =
-        MedicationReminderNotification(
-            notificationId = reminderIdFor(event.eventId),
-            title = event.medicationName,
-            message = "${event.dosageText} · ${intakeMomentLabel(event.intakeMoment)}",
-            scheduledDateTime = event.scheduledDateTime
-        )
-
     private suspend fun runReminderUpdate(action: suspend () -> Unit) {
         try {
             action()
@@ -212,19 +188,7 @@ class TodayViewModel(
         }
     }
 
-    private fun reminderIdFor(eventId: String): String = MEDICATION_REMINDER_ID_PREFIX + eventId
-
-    private fun plusMinutes(dateTime: LocalDateTime, minutes: Int): LocalDateTime {
-        val totalSeconds = dateTime.time.toSecondOfDay() + minutes * SECONDS_IN_MINUTE
-        val dayOffset = totalSeconds.floorDiv(SECONDS_IN_DAY)
-        val secondOfDay = totalSeconds.mod(SECONDS_IN_DAY)
-        val shiftedDate = dateTime.date.plus(dayOffset, DateTimeUnit.DAY)
-        return LocalDateTime(shiftedDate, LocalTime.fromSecondOfDay(secondOfDay))
-    }
-
     private companion object {
         const val POSTPONE_MINUTES = 10
-        const val SECONDS_IN_MINUTE = 60
-        const val SECONDS_IN_DAY = 24 * 60 * 60
     }
 }

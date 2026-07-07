@@ -20,7 +20,9 @@ import io.github.sandroisu.threetimesaday.feature.today.data.PersistentMedicatio
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
+import io.github.sandroisu.threetimesaday.feature.today.domain.RescheduleMedicationRemindersUseCase
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
+import io.github.sandroisu.threetimesaday.feature.today.presentation.intakeMomentLabel
 import kotlinx.serialization.json.Json
 import org.koin.core.module.dsl.viewModelOf
 import org.koin.dsl.module
@@ -42,6 +44,20 @@ val commonAppModule = module {
     single<MedicationIntakeRecordRepository> { PersistentMedicationIntakeRecordRepository(get(), get()) }
     single { GenerateMedicationIntakeEventsForDateUseCase() }
     single { ApplyMedicationIntakeRecordsUseCase() }
+    single {
+        RescheduleMedicationRemindersUseCase(
+            dailyScheduleRepository = get(),
+            medicationRepository = get(),
+            medicationIntakeRecordRepository = get(),
+            generateMedicationIntakeEventsForDate = get(),
+            applyMedicationIntakeRecords = get(),
+            medicationReminderScheduler = get(),
+            timeProvider = get(),
+            buildReminderMessage = { event ->
+                "${event.dosageText} · ${intakeMomentLabel(event.intakeMoment)}"
+            }
+        )
+    }
     viewModelOf(::TodayViewModel)
     viewModelOf(::ScheduleEditorViewModel)
     viewModelOf(::MedicationListViewModel)
