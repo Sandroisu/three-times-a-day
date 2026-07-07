@@ -87,8 +87,14 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                 AppScreen.MedicationEditor -> MedicationEditorScreen(
                     medicationId = selectedMedicationId,
                     onBackClick = { currentScreen = AppScreen.MedicationList },
-                    onMedicationSaved = { currentScreen = AppScreen.MedicationList },
-                    onMedicationDeleted = { currentScreen = AppScreen.MedicationList }
+                    onMedicationSaved = {
+                        todayViewModel.loadToday()
+                        currentScreen = AppScreen.MedicationList
+                    },
+                    onMedicationDeleted = {
+                        todayViewModel.loadToday()
+                        currentScreen = AppScreen.MedicationList
+                    }
                 )
             }
         }
