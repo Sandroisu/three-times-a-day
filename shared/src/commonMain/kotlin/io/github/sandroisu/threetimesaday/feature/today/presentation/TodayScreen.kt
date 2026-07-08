@@ -80,6 +80,14 @@ fun TodayScreen(
             onEnableNotificationsClick = todayViewModel::requestNotificationPermission,
             onOpenSettingsClick = todayViewModel::openNotificationSettings
         )
+        if (!uiState.exactRemindersAllowed) {
+            Text(
+                text = "Точные напоминания отключены в системе — уведомления могут приходить с задержкой. " +
+                    "Включите точные будильники в настройках, чтобы напоминания приходили вовремя.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
         if (uiState.notificationErrorMessage != null) {
             Text(
                 text = uiState.notificationErrorMessage.orEmpty(),

@@ -13,5 +13,6 @@ data class TodayUiState(
     val errorMessage: String? = null,
     val notificationPermissionStatus: NotificationPermissionStatus = NotificationPermissionStatus.NotDetermined,
     val notificationErrorMessage: String? = null,
+    val exactRemindersAllowed: Boolean = true,
     val highlightedEventId: String? = null
 )

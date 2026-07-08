@@ -6,6 +6,8 @@ interface MedicationReminderScheduler {
 
     suspend fun requestPermission(): NotificationPermissionStatus
 
+    suspend fun areExactRemindersAllowed(): Boolean = true
+
     suspend fun scheduleReminder(notification: MedicationReminderNotification)
 
     suspend fun cancelReminder(notificationId: String)

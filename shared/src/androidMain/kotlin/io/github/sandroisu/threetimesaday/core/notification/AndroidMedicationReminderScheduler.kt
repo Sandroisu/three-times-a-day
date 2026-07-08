@@ -48,13 +48,18 @@ class AndroidMedicationReminderScheduler(
         return if (isGranted) NotificationPermissionStatus.Granted else NotificationPermissionStatus.Denied
     }
 
+    override suspend fun areExactRemindersAllowed(): Boolean {
+        val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return true
+        return canScheduleExact(alarmManager)
+    }
+
     override suspend fun scheduleReminder(notification: MedicationReminderNotification) {
         val alarmManager = context.getSystemService(AlarmManager::class.java) ?: return
         val triggerAtMillis = notification.scheduledDateTime
             .toInstant(TimeZone.currentSystemDefault())
             .toEpochMilliseconds()
         val pendingIntent = buildPendingIntent(notification)
-        val useExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+        val useExact = canScheduleExact(alarmManager)
         val scheduled = try {
             if (useExact) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
@@ -116,6 +121,9 @@ class AndroidMedicationReminderScheduler(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
     }
+
+    private fun canScheduleExact(alarmManager: AlarmManager): Boolean =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
 
     private fun reminderIntent(): Intent = Intent(context, MedicationReminderReceiver::class.java).apply {
         action = ACTION_MEDICATION_REMINDER

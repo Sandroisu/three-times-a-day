@@ -77,6 +77,32 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun loadTodayReflectsExactRemindersUnavailable() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val reminderScheduler = FakeMedicationReminderScheduler()
+        reminderScheduler.exactRemindersAllowed = false
+        val viewModel = createViewModel(
+            scheduleRepository = scheduleRepository,
+            medicationRepository = medicationRepository,
+            reminderScheduler = reminderScheduler
+        )
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.exactRemindersAllowed)
+    }
+
+    @Test
+    fun loadTodayReflectsExactRemindersAvailableByDefault() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(scheduleRepository, medicationRepository)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.exactRemindersAllowed)
+    }
+
+    @Test
     fun openNotificationSettingsDelegatesToAppSettingsOpener() = runTest(testDispatcher) {
         val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
         val medicationRepository = FakeMedicationRepository(emptyList())
@@ -620,10 +646,13 @@ class TodayViewModelTest {
         var cancelAllCount = 0
         var permissionStatus = NotificationPermissionStatus.Granted
         var requestPermissionResult = NotificationPermissionStatus.Granted
+        var exactRemindersAllowed = true
         var scheduleError: Throwable? = null
         var cancelError: Throwable? = null
 
         override suspend fun getPermissionStatus(): NotificationPermissionStatus = permissionStatus
+
+        override suspend fun areExactRemindersAllowed(): Boolean = exactRemindersAllowed
 
         override suspend fun requestPermission(): NotificationPermissionStatus {
             permissionStatus = requestPermissionResult

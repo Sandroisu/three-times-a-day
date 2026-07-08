@@ -70,7 +70,13 @@ class TodayViewModel(
                     )
                 }
                 refreshPermissionStatus()
-                runReminderUpdate { rescheduleMedicationReminders() }
+                runReminderUpdate {
+                    val exactAllowed = medicationReminderScheduler.areExactRemindersAllowed()
+                    mutableUiState.update { currentState ->
+                        currentState.copy(exactRemindersAllowed = exactAllowed)
+                    }
+                    rescheduleMedicationReminders()
+                }
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (loadFailure: Exception) {
