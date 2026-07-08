@@ -101,7 +101,6 @@ fun ScheduleEditorScreen(
             }
             Button(
                 onClick = scheduleEditorViewModel::save,
-                enabled = uiState.isSaveEnabled,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Сохранить")

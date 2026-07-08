@@ -54,6 +54,9 @@ class ScheduleEditorViewModel(
     fun save() {
         val currentState = validate(mutableUiState.value)
         mutableUiState.value = currentState
+        if (!currentState.isSaveEnabled) {
+            return
+        }
         val validatedSchedule = buildScheduleOrNull(currentState) ?: return
         viewModelScope.launch {
             try {
@@ -110,18 +113,18 @@ class ScheduleEditorViewModel(
         val lunchTime = parseTimeOfDay(state.lunchTimeText)
         val dinnerTime = parseTimeOfDay(state.dinnerTimeText)
         val sleepTime = parseTimeOfDay(state.sleepTimeText)
-        val allValid = wakeUpTime != null &&
-            breakfastTime != null &&
-            lunchTime != null &&
-            dinnerTime != null &&
-            sleepTime != null
+        val parsedTimes = listOf(wakeUpTime, breakfastTime, lunchTime, dinnerTime, sleepTime)
+        val allValid = parsedTimes.all { parsedTime -> parsedTime != null }
+        val presentTimes = parsedTimes.filterNotNull()
+        val hasDuplicates = allValid && presentTimes.toSet().size < presentTimes.size
         return state.copy(
             wakeUpTimeError = errorFor(wakeUpTime),
             breakfastTimeError = errorFor(breakfastTime),
             lunchTimeError = errorFor(lunchTime),
             dinnerTimeError = errorFor(dinnerTime),
             sleepTimeError = errorFor(sleepTime),
-            isSaveEnabled = allValid && !state.isLoading
+            generalErrorMessage = if (hasDuplicates) DUPLICATE_TIME_MESSAGE else null,
+            isSaveEnabled = allValid && !hasDuplicates && !state.isLoading
         )
     }
 
@@ -153,5 +156,6 @@ class ScheduleEditorViewModel(
 
     private companion object {
         const val TIME_FORMAT_ERROR_MESSAGE = "Введите время в формате HH:mm"
+        const val DUPLICATE_TIME_MESSAGE = "Времена в режиме дня не должны повторяться"
     }
 }

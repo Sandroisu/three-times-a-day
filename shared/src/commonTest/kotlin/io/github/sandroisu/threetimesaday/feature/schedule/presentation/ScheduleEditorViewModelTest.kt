@@ -94,6 +94,55 @@ class ScheduleEditorViewModelTest {
     }
 
     @Test
+    fun duplicateTimesShowGeneralErrorAndDisableSave() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createInitialSchedule())
+        val viewModel = ScheduleEditorViewModel(scheduleRepository)
+        advanceUntilIdle()
+
+        viewModel.onBreakfastTimeChanged("08:00")
+
+        val uiState = viewModel.uiState.value
+        assertNotNull(uiState.generalErrorMessage)
+        assertFalse(uiState.isSaveEnabled)
+    }
+
+    @Test
+    fun duplicateTimesPreventSave() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createInitialSchedule())
+        val viewModel = ScheduleEditorViewModel(scheduleRepository)
+        advanceUntilIdle()
+        viewModel.onBreakfastTimeChanged("08:00")
+
+        val receivedSavedEvents = mutableListOf<Unit>()
+        val collectJob = launch {
+            viewModel.scheduleSavedEvents.collect { receivedSavedEvents.add(it) }
+        }
+        advanceUntilIdle()
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNull(scheduleRepository.savedSchedule)
+        assertTrue(receivedSavedEvents.isEmpty())
+        collectJob.cancel()
+    }
+
+    @Test
+    fun resolvingDuplicateReenablesSaveAndClearsGeneralError() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createInitialSchedule())
+        val viewModel = ScheduleEditorViewModel(scheduleRepository)
+        advanceUntilIdle()
+        viewModel.onBreakfastTimeChanged("08:00")
+        assertFalse(viewModel.uiState.value.isSaveEnabled)
+
+        viewModel.onBreakfastTimeChanged("09:00")
+
+        val uiState = viewModel.uiState.value
+        assertNull(uiState.generalErrorMessage)
+        assertTrue(uiState.isSaveEnabled)
+    }
+
+    @Test
     fun successfulSaveWritesNewScheduleToRepository() = runTest(testDispatcher) {
         val scheduleRepository = FakeDailyScheduleRepository(createInitialSchedule())
         val viewModel = ScheduleEditorViewModel(scheduleRepository)
