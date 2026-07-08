@@ -162,7 +162,7 @@ class TodayViewModel(
     private fun buildRecord(event: MedicationIntakeEvent, status: MedicationIntakeStatus): MedicationIntakeRecord {
         val updatedDateTime = timeProvider.currentDateTime()
         val postponedDateTime = if (status == MedicationIntakeStatus.Postponed) {
-            plusMinutes(event.scheduledDateTime, POSTPONE_MINUTES)
+            plusMinutes(event.scheduledDateTime, MEDICATION_POSTPONE_MINUTES)
         } else {
             null
         }
@@ -200,7 +200,4 @@ class TodayViewModel(
         }
     }
 
-    private companion object {
-        const val POSTPONE_MINUTES = 10
-    }
 }

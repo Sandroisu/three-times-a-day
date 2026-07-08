@@ -343,7 +343,7 @@ private fun IntakeEventActions(
                 Text(text = "Пропустить")
             }
             TextButton(onClick = { onPostpone(intakeEvent.eventId) }) {
-                Text(text = "Отложить")
+                Text(text = postponeActionLabel())
             }
         }
     }

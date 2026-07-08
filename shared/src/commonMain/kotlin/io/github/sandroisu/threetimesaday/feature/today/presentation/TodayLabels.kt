@@ -4,6 +4,10 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIn
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.medicationIntakeMomentLabel
 
+const val MEDICATION_POSTPONE_MINUTES = 10
+
+fun postponeActionLabel(): String = "Отложить на $MEDICATION_POSTPONE_MINUTES мин"
+
 fun intakeMomentLabel(intakeMoment: MedicationIntakeMoment?): String =
     if (intakeMoment == null) "По расписанию" else medicationIntakeMomentLabel(intakeMoment)
 
