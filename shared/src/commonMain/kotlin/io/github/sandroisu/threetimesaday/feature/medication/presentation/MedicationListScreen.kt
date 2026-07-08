@@ -78,9 +78,8 @@ fun MedicationListScreen(
                 color = MaterialTheme.colorScheme.error
             )
 
-            uiState.medications.isEmpty() -> Text(
-                text = "Препараты не добавлены",
-                style = MaterialTheme.typography.bodyMedium
+            uiState.medications.isEmpty() -> MedicationListEmptyState(
+                onAddMedicationClick = onAddMedicationClick
             )
 
             else -> LazyColumn(
@@ -93,6 +92,33 @@ fun MedicationListScreen(
                         onClick = { onMedicationClick(medicationItem.id) }
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MedicationListEmptyState(
+    onAddMedicationClick: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Препаратов пока нет",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Добавьте первый препарат, чтобы приложение напоминало о приёме.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Button(onClick = onAddMedicationClick) {
+                Text(text = "Добавить лекарство")
             }
         }
     }

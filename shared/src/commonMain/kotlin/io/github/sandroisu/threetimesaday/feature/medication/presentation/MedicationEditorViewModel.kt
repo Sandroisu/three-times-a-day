@@ -103,8 +103,26 @@ class MedicationEditorViewModel(
         }
     }
 
-    fun delete() {
+    fun requestDelete() {
+        if (mutableUiState.value.medicationId == null) {
+            return
+        }
+        mutableUiState.update { currentState ->
+            currentState.copy(isDeleteConfirmationVisible = true)
+        }
+    }
+
+    fun dismissDeleteConfirmation() {
+        mutableUiState.update { currentState ->
+            currentState.copy(isDeleteConfirmationVisible = false)
+        }
+    }
+
+    fun confirmDelete() {
         val medicationId = mutableUiState.value.medicationId ?: return
+        mutableUiState.update { currentState ->
+            currentState.copy(isDeleteConfirmationVisible = false)
+        }
         viewModelScope.launch {
             try {
                 medicationRepository.deleteMedication(medicationId)

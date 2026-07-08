@@ -201,9 +201,71 @@ class MedicationEditorViewModelTest {
         viewModel.start("existing")
         advanceUntilIdle()
 
-        viewModel.delete()
+        viewModel.confirmDelete()
         advanceUntilIdle()
 
+        assertTrue(medicationRepository.currentMedications().none { it.id == "existing" })
+    }
+
+    @Test
+    fun requestDeleteShowsConfirmationWithoutRemovingMedication() = runTest(testDispatcher) {
+        val existingMedication = createMedication(
+            medicationId = "existing",
+            name = "Магний",
+            dosageText = "1 таблетка",
+            intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.BeforeSleep)
+        )
+        val medicationRepository = FakeMedicationRepository(listOf(existingMedication))
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start("existing")
+        advanceUntilIdle()
+
+        viewModel.requestDelete()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isDeleteConfirmationVisible)
+        assertTrue(medicationRepository.currentMedications().any { it.id == "existing" })
+    }
+
+    @Test
+    fun dismissDeleteConfirmationHidesDialogAndKeepsMedication() = runTest(testDispatcher) {
+        val existingMedication = createMedication(
+            medicationId = "existing",
+            name = "Магний",
+            dosageText = "1 таблетка",
+            intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.BeforeSleep)
+        )
+        val medicationRepository = FakeMedicationRepository(listOf(existingMedication))
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start("existing")
+        advanceUntilIdle()
+        viewModel.requestDelete()
+
+        viewModel.dismissDeleteConfirmation()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
+        assertTrue(medicationRepository.currentMedications().any { it.id == "existing" })
+    }
+
+    @Test
+    fun confirmDeleteHidesConfirmationAndRemovesMedication() = runTest(testDispatcher) {
+        val existingMedication = createMedication(
+            medicationId = "existing",
+            name = "Магний",
+            dosageText = "1 таблетка",
+            intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.BeforeSleep)
+        )
+        val medicationRepository = FakeMedicationRepository(listOf(existingMedication))
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start("existing")
+        advanceUntilIdle()
+        viewModel.requestDelete()
+
+        viewModel.confirmDelete()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.isDeleteConfirmationVisible)
         assertTrue(medicationRepository.currentMedications().none { it.id == "existing" })
     }
 
@@ -251,7 +313,7 @@ class MedicationEditorViewModelTest {
         }
         advanceUntilIdle()
 
-        viewModel.delete()
+        viewModel.confirmDelete()
         advanceUntilIdle()
 
         assertNotNull(viewModel.uiState.value.generalErrorMessage)

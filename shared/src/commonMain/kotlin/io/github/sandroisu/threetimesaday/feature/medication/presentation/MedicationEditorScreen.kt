@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -138,13 +139,33 @@ fun MedicationEditorScreen(
             }
             if (uiState.isDeleteVisible) {
                 OutlinedButton(
-                    onClick = medicationEditorViewModel::delete,
+                    onClick = medicationEditorViewModel::requestDelete,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(text = "Удалить")
                 }
             }
         }
+    }
+
+    if (uiState.isDeleteConfirmationVisible) {
+        AlertDialog(
+            onDismissRequest = medicationEditorViewModel::dismissDeleteConfirmation,
+            title = { Text(text = "Удалить препарат?") },
+            text = {
+                Text(text = "Препарат и его напоминания будут удалены. Это действие нельзя отменить.")
+            },
+            confirmButton = {
+                TextButton(onClick = medicationEditorViewModel::confirmDelete) {
+                    Text(text = "Удалить")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = medicationEditorViewModel::dismissDeleteConfirmation) {
+                    Text(text = "Отмена")
+                }
+            }
+        )
     }
 }
 

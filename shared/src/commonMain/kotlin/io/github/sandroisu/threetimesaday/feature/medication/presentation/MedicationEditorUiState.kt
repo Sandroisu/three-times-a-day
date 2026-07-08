@@ -15,5 +15,6 @@ data class MedicationEditorUiState(
     val generalErrorMessage: String? = null,
     val isExactTimeVisible: Boolean = false,
     val isSaveEnabled: Boolean = false,
-    val isDeleteVisible: Boolean = false
+    val isDeleteVisible: Boolean = false,
+    val isDeleteConfirmationVisible: Boolean = false
 )
