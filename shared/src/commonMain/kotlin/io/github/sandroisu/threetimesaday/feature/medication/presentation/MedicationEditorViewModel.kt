@@ -81,7 +81,7 @@ class MedicationEditorViewModel(
     }
 
     fun save() {
-        val validatedState = validate(mutableUiState.value)
+        val validatedState = validate(mutableUiState.value, forceErrors = true)
         mutableUiState.value = validatedState
         if (!validatedState.isSaveEnabled) {
             return
@@ -262,19 +262,19 @@ class MedicationEditorViewModel(
         return MedicationIntakeRule.AtMoment(selectedMoment)
     }
 
-    private fun validate(state: MedicationEditorUiState): MedicationEditorUiState {
+    private fun validate(state: MedicationEditorUiState, forceErrors: Boolean = false): MedicationEditorUiState {
         val nameValid = state.nameText.trim().isNotEmpty()
         val dosageValid = state.dosageText.trim().isNotEmpty()
         val exactTimeParsed = parseTimeOfDay(state.exactTimeText)
         val exactTimeValid = !state.isExactTimeVisible || exactTimeParsed != null
+        val showNameError = !nameValid && (forceErrors || state.nameText.isNotEmpty())
+        val showDosageError = !dosageValid && (forceErrors || state.dosageText.isNotEmpty())
+        val showExactTimeError = state.isExactTimeVisible && exactTimeParsed == null &&
+            (forceErrors || state.exactTimeText.isNotEmpty())
         return state.copy(
-            nameError = if (!nameValid && state.nameText.isNotEmpty()) NAME_ERROR_MESSAGE else null,
-            dosageError = if (!dosageValid && state.dosageText.isNotEmpty()) DOSAGE_ERROR_MESSAGE else null,
-            exactTimeError = if (state.isExactTimeVisible && state.exactTimeText.isNotEmpty() && exactTimeParsed == null) {
-                TIME_FORMAT_ERROR_MESSAGE
-            } else {
-                null
-            },
+            nameError = if (showNameError) NAME_ERROR_MESSAGE else null,
+            dosageError = if (showDosageError) DOSAGE_ERROR_MESSAGE else null,
+            exactTimeError = if (showExactTimeError) TIME_FORMAT_ERROR_MESSAGE else null,
             isSaveEnabled = nameValid && dosageValid && exactTimeValid && !editingUnsupportedRule && !state.isLoading
         )
     }

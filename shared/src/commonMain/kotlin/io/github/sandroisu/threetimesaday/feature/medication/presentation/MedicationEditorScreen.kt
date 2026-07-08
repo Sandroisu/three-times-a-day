@@ -132,7 +132,6 @@ fun MedicationEditorScreen(
             }
             Button(
                 onClick = medicationEditorViewModel::save,
-                enabled = uiState.isSaveEnabled,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(text = "Сохранить")

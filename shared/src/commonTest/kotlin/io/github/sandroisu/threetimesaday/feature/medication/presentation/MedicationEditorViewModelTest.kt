@@ -99,6 +99,60 @@ class MedicationEditorViewModelTest {
     }
 
     @Test
+    fun savingEmptyFormSurfacesFieldErrorsAndDoesNotPersist() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start(null)
+        advanceUntilIdle()
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        val uiState = viewModel.uiState.value
+        assertNotNull(uiState.nameError)
+        assertNotNull(uiState.dosageError)
+        assertFalse(uiState.isSaveEnabled)
+        assertTrue(medicationRepository.currentMedications().isEmpty())
+    }
+
+    @Test
+    fun savingBlankNameSurfacesNameErrorAndDoesNotPersist() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("   ")
+        viewModel.onDosageChanged("1 таблетка")
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        val uiState = viewModel.uiState.value
+        assertNotNull(uiState.nameError)
+        assertFalse(uiState.isSaveEnabled)
+        assertTrue(medicationRepository.currentMedications().isEmpty())
+    }
+
+    @Test
+    fun savingWithExactTimeRuleAndNoTimeSurfacesErrorOnSave() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Аспирин")
+        viewModel.onDosageChanged("1 таблетка")
+        viewModel.onExactTimeRuleSelected()
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        val uiState = viewModel.uiState.value
+        assertNotNull(uiState.exactTimeError)
+        assertFalse(uiState.isSaveEnabled)
+        assertTrue(medicationRepository.currentMedications().isEmpty())
+    }
+
+    @Test
     fun successfulCreateWritesMedicationToRepository() = runTest(testDispatcher) {
         val medicationRepository = FakeMedicationRepository(emptyList())
         val viewModel = createViewModel(
