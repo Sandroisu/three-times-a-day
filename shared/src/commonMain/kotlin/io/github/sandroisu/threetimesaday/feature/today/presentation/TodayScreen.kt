@@ -89,26 +89,40 @@ fun TodayScreen(
             )
         }
         if (uiState.notificationErrorMessage != null) {
-            Text(
-                text = uiState.notificationErrorMessage.orEmpty(),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
-            )
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.errorContainer
+                )
+            ) {
+                Text(
+                    text = uiState.notificationErrorMessage.orEmpty(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
         }
-        when {
-            uiState.isLoading -> LoadingState()
-            uiState.errorMessage != null -> Text(
+        when (
+            todayContentState(
+                isLoading = uiState.isLoading,
+                hasErrorMessage = uiState.errorMessage != null,
+                hasEvents = uiState.intakeEvents.isNotEmpty()
+            )
+        ) {
+            TodayContentState.Loading -> LoadingState()
+            TodayContentState.Error -> Text(
                 text = uiState.errorMessage.orEmpty(),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.error
             )
 
-            uiState.intakeEvents.isEmpty() -> Text(
-                text = "На сегодня приёмов пока нет",
-                style = MaterialTheme.typography.bodyMedium
+            TodayContentState.Empty -> TodayEmptyState(
+                onAddMedicationClick = onEditMedicationsClick,
+                onCheckScheduleClick = onEditScheduleClick
             )
 
-            else -> IntakeEventList(
+            TodayContentState.Events -> IntakeEventList(
                 intakeEvents = uiState.intakeEvents,
                 highlightedEventId = uiState.highlightedEventId,
                 currentDateTime = uiState.currentDateTime,
@@ -117,6 +131,42 @@ fun TodayScreen(
                 onPostpone = todayViewModel::postponeIntake,
                 onHighlightShown = todayViewModel::clearHighlightedEvent
             )
+        }
+    }
+}
+
+@Composable
+private fun TodayEmptyState(
+    onAddMedicationClick: () -> Unit,
+    onCheckScheduleClick: () -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "На сегодня приёмов нет",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "Добавьте лекарство или проверьте режим дня, чтобы запланировать напоминания.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Button(onClick = onAddMedicationClick) {
+                    Text(text = "Добавить лекарство")
+                }
+                OutlinedButton(onClick = onCheckScheduleClick) {
+                    Text(text = "Режим дня")
+                }
+            }
         }
     }
 }
