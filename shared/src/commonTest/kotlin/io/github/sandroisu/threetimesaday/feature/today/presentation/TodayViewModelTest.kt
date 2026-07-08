@@ -4,6 +4,7 @@ import io.github.sandroisu.threetimesaday.core.notification.MEDICATION_REMINDER_
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderNotification
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderScheduler
 import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
+import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
@@ -73,6 +74,23 @@ class TodayViewModelTest {
         assertFalse(uiState.isLoading)
         assertTrue(uiState.intakeEvents.isNotEmpty())
         assertNull(uiState.errorMessage)
+    }
+
+    @Test
+    fun openNotificationSettingsDelegatesToAppSettingsOpener() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val settingsOpener = RecordingAppSettingsOpener()
+        val viewModel = createViewModel(
+            scheduleRepository = scheduleRepository,
+            medicationRepository = medicationRepository,
+            appSettingsOpener = settingsOpener
+        )
+        advanceUntilIdle()
+
+        viewModel.openNotificationSettings()
+
+        assertEquals(1, settingsOpener.openCount)
     }
 
     @Test
@@ -459,7 +477,8 @@ class TodayViewModelTest {
         scheduleRepository: DailyScheduleRepository,
         medicationRepository: MedicationRepository,
         recordRepository: MedicationIntakeRecordRepository = FakeMedicationIntakeRecordRepository(),
-        reminderScheduler: MedicationReminderScheduler = FakeMedicationReminderScheduler()
+        reminderScheduler: MedicationReminderScheduler = FakeMedicationReminderScheduler(),
+        appSettingsOpener: AppSettingsOpener = RecordingAppSettingsOpener()
     ): TodayViewModel {
         val timeProvider = FakeTimeProvider(testDate)
         val generateEvents = GenerateMedicationIntakeEventsForDateUseCase()
@@ -482,7 +501,8 @@ class TodayViewModelTest {
             generateMedicationIntakeEventsForDate = generateEvents,
             applyMedicationIntakeRecords = applyRecords,
             medicationReminderScheduler = reminderScheduler,
-            rescheduleMedicationReminders = rescheduleReminders
+            rescheduleMedicationReminders = rescheduleReminders,
+            appSettingsOpener = appSettingsOpener
         )
     }
 
@@ -624,6 +644,15 @@ class TodayViewModelTest {
             cancelError?.let { throw it }
             cancelAllCount++
             scheduledNotifications.clear()
+        }
+    }
+
+    private class RecordingAppSettingsOpener : AppSettingsOpener {
+
+        var openCount = 0
+
+        override fun openAppSettings() {
+            openCount++
         }
     }
 }

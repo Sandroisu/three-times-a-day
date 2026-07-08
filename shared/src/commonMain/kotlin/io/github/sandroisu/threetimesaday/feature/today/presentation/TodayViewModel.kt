@@ -3,6 +3,7 @@ package io.github.sandroisu.threetimesaday.feature.today.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderScheduler
+import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.core.time.formatScreenDate
 import io.github.sandroisu.threetimesaday.core.time.plusMinutes
@@ -31,7 +32,8 @@ class TodayViewModel(
     private val generateMedicationIntakeEventsForDate: GenerateMedicationIntakeEventsForDateUseCase,
     private val applyMedicationIntakeRecords: ApplyMedicationIntakeRecordsUseCase,
     private val medicationReminderScheduler: MedicationReminderScheduler,
-    private val rescheduleMedicationReminders: RescheduleMedicationRemindersUseCase
+    private val rescheduleMedicationReminders: RescheduleMedicationRemindersUseCase,
+    private val appSettingsOpener: AppSettingsOpener
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
@@ -80,6 +82,10 @@ class TodayViewModel(
                 }
             }
         }
+    }
+
+    fun openNotificationSettings() {
+        appSettingsOpener.openAppSettings()
     }
 
     fun highlightEvent(eventId: String) {

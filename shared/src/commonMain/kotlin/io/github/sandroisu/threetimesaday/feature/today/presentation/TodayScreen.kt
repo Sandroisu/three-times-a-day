@@ -77,7 +77,8 @@ fun TodayScreen(
         }
         NotificationStatusBlock(
             permissionStatus = uiState.notificationPermissionStatus,
-            onEnableNotificationsClick = todayViewModel::requestNotificationPermission
+            onEnableNotificationsClick = todayViewModel::requestNotificationPermission,
+            onOpenSettingsClick = todayViewModel::openNotificationSettings
         )
         if (uiState.notificationErrorMessage != null) {
             Text(
@@ -115,26 +116,29 @@ fun TodayScreen(
 @Composable
 private fun NotificationStatusBlock(
     permissionStatus: NotificationPermissionStatus,
-    onEnableNotificationsClick: () -> Unit
+    onEnableNotificationsClick: () -> Unit,
+    onOpenSettingsClick: () -> Unit
 ) {
-    when (permissionStatus) {
-        NotificationPermissionStatus.NotDetermined -> Button(onClick = onEnableNotificationsClick) {
-            Text(text = "Включить уведомления")
+    val prompt = notificationPermissionPrompt(permissionStatus) ?: return
+    val onActionClick = when (prompt.action) {
+        NotificationPermissionAction.Request -> onEnableNotificationsClick
+        NotificationPermissionAction.OpenSettings -> onOpenSettingsClick
+    }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = prompt.message,
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Button(onClick = onActionClick) {
+                Text(text = prompt.actionLabel)
+            }
         }
-
-        NotificationPermissionStatus.Denied -> Text(
-            text = "Уведомления выключены",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        NotificationPermissionStatus.Granted -> Text(
-            text = "Уведомления включены",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        NotificationPermissionStatus.NotSupported -> Unit
     }
 }
 
