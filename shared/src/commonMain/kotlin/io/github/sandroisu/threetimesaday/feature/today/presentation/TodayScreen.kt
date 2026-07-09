@@ -306,18 +306,17 @@ private fun IntakeEventCard(
             )
             if (isExpired) {
                 Text(
-                    text = "Сегодня уже прошло",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                IntakeEventActions(
-                    intakeEvent = intakeEvent,
-                    onMarkTaken = onMarkTaken,
-                    onMarkSkipped = onMarkSkipped,
-                    onPostpone = onPostpone
+                    text = overdueLabel(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.error
                 )
             }
+            IntakeEventActions(
+                intakeEvent = intakeEvent,
+                onMarkTaken = onMarkTaken,
+                onMarkSkipped = onMarkSkipped,
+                onPostpone = onPostpone
+            )
         }
     }
 }

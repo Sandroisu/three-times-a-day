@@ -8,6 +8,8 @@ const val MEDICATION_POSTPONE_MINUTES = 10
 
 fun postponeActionLabel(): String = "Отложить на $MEDICATION_POSTPONE_MINUTES мин"
 
+fun overdueLabel(): String = "Просрочено"
+
 fun intakeMomentLabel(intakeMoment: MedicationIntakeMoment?): String =
     if (intakeMoment == null) "По расписанию" else medicationIntakeMomentLabel(intakeMoment)
 

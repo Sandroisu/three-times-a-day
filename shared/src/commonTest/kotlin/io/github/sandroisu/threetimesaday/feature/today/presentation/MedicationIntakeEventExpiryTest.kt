@@ -45,6 +45,11 @@ class MedicationIntakeEventExpiryTest {
         assertFalse(isMedicationIntakeEventExpired(createEvent(MedicationIntakeStatus.Postponed, futureDateTime), currentDateTime))
     }
 
+    @Test
+    fun overdueLabelIsNotBlank() {
+        assertTrue(overdueLabel().isNotBlank())
+    }
+
     private fun createEvent(
         status: MedicationIntakeStatus,
         scheduledDateTime: LocalDateTime
