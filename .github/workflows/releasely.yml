@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run Releasely
-        uses: sandroisu/releasely@v0
+        uses: sandroisu/releasely@main
         with:
           path: .
           base-ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
