@@ -29,6 +29,11 @@ fun formatScreenDate(date: LocalDate): String {
     return "${date.day} $monthName ${date.year}"
 }
 
+fun formatDayMonth(date: LocalDate): String {
+    val monthName = monthNamesInGenitive[date.month.ordinal]
+    return "${date.day} $monthName"
+}
+
 fun parseTimeOfDay(text: String): LocalTime? {
     if (text.length != 5 || text[2] != ':') {
         return null

@@ -4,7 +4,8 @@ data class MedicationListItemUiModel(
     val id: String,
     val name: String,
     val dosageText: String,
-    val intakeRuleText: String
+    val intakeRuleText: String,
+    val courseLabel: String?
 )
 
 data class MedicationListUiState(

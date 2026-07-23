@@ -4,6 +4,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
+import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -11,6 +12,8 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -40,7 +43,7 @@ class MedicationListViewModelTest {
                 createMedication("wake", "Энтекавир", "1 таблетка", MedicationIntakeMoment.AfterWakeUp)
             )
         )
-        val viewModel = MedicationListViewModel(medicationRepository)
+        val viewModel = MedicationListViewModel(medicationRepository, FixedTimeProvider())
 
         advanceUntilIdle()
 
@@ -51,13 +54,14 @@ class MedicationListViewModelTest {
         assertEquals("Энтекавир", listItem.name)
         assertEquals("1 таблетка", listItem.dosageText)
         assertEquals("После пробуждения", listItem.intakeRuleText)
+        assertEquals("День 3", listItem.courseLabel)
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
     @Test
     fun emptyRepositoryGivesEmptyListWithoutError() = runTest(testDispatcher) {
         val medicationRepository = FakeMedicationRepository(emptyList())
-        val viewModel = MedicationListViewModel(medicationRepository)
+        val viewModel = MedicationListViewModel(medicationRepository, FixedTimeProvider())
 
         advanceUntilIdle()
 
@@ -71,7 +75,7 @@ class MedicationListViewModelTest {
     fun repositoryFailureSetsErrorMessageAndStopsLoading() = runTest(testDispatcher) {
         val medicationRepository = FakeMedicationRepository(emptyList())
         medicationRepository.loadError = IllegalStateException("Хранилище недоступно")
-        val viewModel = MedicationListViewModel(medicationRepository)
+        val viewModel = MedicationListViewModel(medicationRepository, FixedTimeProvider())
 
         advanceUntilIdle()
 
@@ -93,6 +97,15 @@ class MedicationListViewModelTest {
         courseStartDate = LocalDate(2020, 1, 1),
         courseEndDate = null
     )
+
+    private class FixedTimeProvider : TimeProvider {
+
+        private val fixedDate = LocalDate(2020, 1, 3)
+
+        override fun currentDate(): LocalDate = fixedDate
+
+        override fun currentDateTime(): LocalDateTime = LocalDateTime(fixedDate, LocalTime(9, 0))
+    }
 
     private class FakeMedicationRepository(
         initialMedications: List<Medication>
