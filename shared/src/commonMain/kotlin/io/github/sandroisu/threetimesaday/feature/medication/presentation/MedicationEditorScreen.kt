@@ -1,4 +1,44 @@
-package io.github.sandroisu.threetimesaday.feature.medication.presentation
+import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationEditorViewModel
+import io.github.sandroisu.threetimesaday.feature.medication.presentation.medicationIntakeMomentLabel
+
+M`` §]\]=['-pfgrte4dwsqa    Z~Ты исполнитель, не ревьюер.
+
+Задача: изучи текущую модель medication/course в three-times-a-day и добавь минимальный course-based контекст в UI, если данные уже доступны без изменения архитектуры.
+
+Цель:
+Пользователь должен лучше понимать, где он находится внутри курса лекарства. Например:
+
+“День 3 из 7”
+или “До 14 июля”
+или другой уже поддерживаемый текущей моделью короткий course label.
+
+Сначала проверь существующие поля модели и use case’ы. Не добавляй БД, сервер, auth, push, navigation library, новые Gradle-модули. Не меняй applicationId/namespace/root package. Не ломай notification tap flow и reminder lifecycle. Без TODO/Temp/Foo/Bar/Sample. Без комментариев в коде. Не пушить.
+
+Если модель уже содержит даты/длительность курса:
+
+добавь небольшой label в Medication list card и/или Today event card;
+добавь/обнови pure tests для formatter/label logic, если есть практичное место.
+
+Если данных для course label в модели нет:
+
+не придумывай новую большую модель;
+отчитайся, каких именно полей не хватает и предложи минимальный следующий implementation step.
+
+Запусти:
+./gradlew :shared
+./gradlew :shared
+./gradlew :androidApp
+./gradlew :shared
+./gradlew :shared
+
+Отчёт коротко:
+
+Что реализовано или почему не реализовано.
+Изменённые файлы.
+Результаты test/build команд.
+Ручные проверки.
+Блокеры/риски./**/package io.github.sandroisu.threetimesaday.feature.medication
+    .presentation
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement

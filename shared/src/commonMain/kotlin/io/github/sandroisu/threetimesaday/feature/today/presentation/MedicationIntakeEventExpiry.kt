@@ -10,5 +10,5 @@ fun isMedicationIntakeEventExpired(
 ): Boolean {
     val isActionable = event.status == MedicationIntakeStatus.Scheduled ||
         event.status == MedicationIntakeStatus.Postponed
-    return isActionable && event.scheduledDateTime <= currentDateTime
+    return isActionable && event.scheduledDateTime < currentDateTime
 }

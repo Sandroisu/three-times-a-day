@@ -153,6 +153,13 @@ private fun MedicationListItemCard(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
+            if (medicationItem.courseLabel != null) {
+                Text(
+                    text = medicationItem.courseLabel,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 }
