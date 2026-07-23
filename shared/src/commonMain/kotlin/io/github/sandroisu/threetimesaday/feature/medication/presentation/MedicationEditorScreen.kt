@@ -1,44 +1,4 @@
-import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationEditorViewModel
-import io.github.sandroisu.threetimesaday.feature.medication.presentation.medicationIntakeMomentLabel
-
-M`` §]\]=['-pfgrte4dwsqa    Z~Ты исполнитель, не ревьюер.
-
-Задача: изучи текущую модель medication/course в three-times-a-day и добавь минимальный course-based контекст в UI, если данные уже доступны без изменения архитектуры.
-
-Цель:
-Пользователь должен лучше понимать, где он находится внутри курса лекарства. Например:
-
-“День 3 из 7”
-или “До 14 июля”
-или другой уже поддерживаемый текущей моделью короткий course label.
-
-Сначала проверь существующие поля модели и use case’ы. Не добавляй БД, сервер, auth, push, navigation library, новые Gradle-модули. Не меняй applicationId/namespace/root package. Не ломай notification tap flow и reminder lifecycle. Без TODO/Temp/Foo/Bar/Sample. Без комментариев в коде. Не пушить.
-
-Если модель уже содержит даты/длительность курса:
-
-добавь небольшой label в Medication list card и/или Today event card;
-добавь/обнови pure tests для formatter/label logic, если есть практичное место.
-
-Если данных для course label в модели нет:
-
-не придумывай новую большую модель;
-отчитайся, каких именно полей не хватает и предложи минимальный следующий implementation step.
-
-Запусти:
-./gradlew :shared
-./gradlew :shared
-./gradlew :androidApp
-./gradlew :shared
-./gradlew :shared
-
-Отчёт коротко:
-
-Что реализовано или почему не реализовано.
-Изменённые файлы.
-Результаты test/build команд.
-Ручные проверки.
-Блокеры/риски./**/package io.github.sandroisu.threetimesaday.feature.medication
-    .presentation
+package io.github.sandroisu.threetimesaday.feature.medication.presentation
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -66,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
@@ -78,7 +38,7 @@ fun MedicationEditorScreen(
     onBackClick: () -> Unit,
     onMedicationSaved: () -> Unit,
     onMedicationDeleted: () -> Unit,
-    medicationEditorViewModel: MedicationEditorViewModel = koinViewModel()
+    medicationEditorViewModel: MedicationEditorViewModel = koinViewModel(),
 ) {
     val uiState by medicationEditorViewModel.uiState.collectAsStateWithLifecycle()
 
@@ -159,7 +119,13 @@ fun MedicationEditorScreen(
                     singleLine = true,
                     isError = uiState.exactTimeError != null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    supportingText = { uiState.exactTimeError?.let { message -> Text(text = message) } },
+                    supportingText = {
+                        uiState.exactTimeError?.let { message ->
+                            Text(
+                                text = message
+                            )
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -192,7 +158,9 @@ fun MedicationEditorScreen(
             onDismissRequest = medicationEditorViewModel::dismissDeleteConfirmation,
             title = { Text(text = "Удалить препарат?") },
             text = {
-                Text(text = "Препарат и его напоминания будут удалены. Это действие нельзя отменить.")
+                Text(
+                    text = "Препарат и его напоминания будут удалены. Это действие нельзя отменить."
+                )
             },
             confirmButton = {
                 TextButton(onClick = medicationEditorViewModel::confirmDelete) {
@@ -212,7 +180,7 @@ fun MedicationEditorScreen(
 private fun IntakeOptionRow(
     label: String,
     selected: Boolean,
-    onClick: () -> Unit
+    onClick: () -> Unit,
 ) {
     Row(
         modifier = Modifier
