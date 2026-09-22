@@ -1,5 +1,6 @@
 package io.github.sandroisu.threetimesaday.core.time
 
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -45,5 +46,20 @@ class TimeParsingTest {
     @Test
     fun rejectsEmptyString() {
         assertNull(parseTimeOfDay(""))
+    }
+
+    @Test
+    fun parsesDateInput() {
+        assertEquals(LocalDate(2026, 7, 14), parseDateInput("14.07.2026"))
+    }
+
+    @Test
+    fun rejectsImpossibleDateInput() {
+        assertNull(parseDateInput("31.02.2026"))
+    }
+
+    @Test
+    fun formatsDateInput() {
+        assertEquals("03.07.2026", formatDateInput(LocalDate(2026, 7, 3)))
     }
 }

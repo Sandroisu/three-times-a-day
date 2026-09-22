@@ -1,8 +1,17 @@
 package io.github.sandroisu.threetimesaday.feature.schedule.presentation
 
+import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -10,19 +19,14 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalTime
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.common_time_error
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class ScheduleEditorViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
-    private val timeFormatErrorMessage = "Введите время в формате HH:mm"
+    private val timeFormatErrorMessage = UiText(Res.string.common_time_error)
 
     @BeforeTest
     fun setUp() {
@@ -102,7 +106,7 @@ class ScheduleEditorViewModelTest {
         viewModel.onBreakfastTimeChanged("08:00")
 
         val uiState = viewModel.uiState.value
-        assertNotNull(uiState.generalErrorMessage)
+        assertEquals(ScheduleLabels.duplicateError, uiState.generalErrorMessage)
         assertFalse(uiState.isSaveEnabled)
     }
 
@@ -192,7 +196,7 @@ class ScheduleEditorViewModelTest {
         advanceUntilIdle()
 
         val uiState = viewModel.uiState.value
-        assertNotNull(uiState.generalErrorMessage)
+        assertEquals(ScheduleLabels.saveError, uiState.generalErrorMessage)
         assertTrue(receivedSavedEvents.isEmpty())
         collectJob.cancel()
     }

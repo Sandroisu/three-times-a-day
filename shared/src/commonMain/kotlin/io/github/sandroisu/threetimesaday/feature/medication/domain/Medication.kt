@@ -10,5 +10,6 @@ data class Medication(
     val dosageText: String,
     val intakeRule: MedicationIntakeRule,
     val courseStartDate: LocalDate,
-    val courseEndDate: LocalDate?
+    val courseEndDate: LocalDate?,
+    val recurrence: MedicationRecurrence = MedicationRecurrence.Daily,
 )

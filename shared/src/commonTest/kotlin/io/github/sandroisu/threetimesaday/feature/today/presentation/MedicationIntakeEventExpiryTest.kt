@@ -2,12 +2,15 @@ package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlin.test.Test
-import kotlin.test.assertFalse
-import kotlin.test.assertTrue
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.intake_overdue
 
 class MedicationIntakeEventExpiryTest {
 
@@ -46,8 +49,8 @@ class MedicationIntakeEventExpiryTest {
     }
 
     @Test
-    fun overdueLabelIsNotBlank() {
-        assertTrue(overdueLabel().isNotBlank())
+    fun overdueLabelUsesLocalizedResource() {
+        assertEquals(Res.string.intake_overdue, overdueLabel().resource)
     }
 
     private fun createEvent(

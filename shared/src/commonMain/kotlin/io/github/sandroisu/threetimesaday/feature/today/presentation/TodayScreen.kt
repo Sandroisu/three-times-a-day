@@ -1,348 +1,245 @@
 package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import io.github.sandroisu.threetimesaday.core.ui.AppIcons
+import io.github.sandroisu.threetimesaday.core.ui.AppSpacing
+import io.github.sandroisu.threetimesaday.core.ui.IconLabel
+import io.github.sandroisu.threetimesaday.core.ui.LoadingIndicator
+import io.github.sandroisu.threetimesaday.core.ui.Notice
+import io.github.sandroisu.threetimesaday.core.ui.PrimaryActionButton
+import io.github.sandroisu.threetimesaday.core.ui.PrivacyPolicyDialog
+import io.github.sandroisu.threetimesaday.core.ui.ScreenHeader
+import io.github.sandroisu.threetimesaday.core.ui.SectionHeader
+import io.github.sandroisu.threetimesaday.core.ui.UiLabels
 import kotlinx.coroutines.delay
-import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
-import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
-import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
-import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
-import kotlinx.datetime.LocalDateTime
 import org.koin.compose.viewmodel.koinViewModel
 
 private const val HIGHLIGHT_VISIBLE_MILLIS = 2500L
+private const val DISPLAY_CLOCK_REFRESH_MILLIS = 1000L
+private const val INTAKE_LIST_HEADER_COUNT = 3
 
 @Composable
-fun TodayScreen(
+internal fun TodayScreen(
     onEditScheduleClick: () -> Unit,
     onEditMedicationsClick: () -> Unit,
-    todayViewModel: TodayViewModel = koinViewModel()
+    todayViewModel: TodayViewModel = koinViewModel(),
 ) {
     val uiState by todayViewModel.uiState.collectAsStateWithLifecycle()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .safeContentPadding()
-            .padding(horizontal = 16.dp, vertical = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = uiState.screenTitle,
-            style = MaterialTheme.typography.headlineMedium
-        )
-        if (uiState.dateTitle.isNotEmpty()) {
-            Text(
-                text = uiState.dateTitle,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Button(onClick = onEditScheduleClick) {
-                Text(text = "Режим дня")
-            }
-            Button(onClick = onEditMedicationsClick) {
-                Text(text = "Препараты")
-            }
-        }
-        NotificationStatusBlock(
-            permissionStatus = uiState.notificationPermissionStatus,
-            onEnableNotificationsClick = todayViewModel::requestNotificationPermission,
-            onOpenSettingsClick = todayViewModel::openNotificationSettings
-        )
-        if (!uiState.exactRemindersAllowed) {
-            Text(
-                text = "Точные напоминания отключены в системе — уведомления могут приходить с задержкой. " +
-                    "Включите точные будильники в настройках, чтобы напоминания приходили вовремя.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-        if (uiState.notificationErrorMessage != null) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Text(
-                    text = uiState.notificationErrorMessage.orEmpty(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.padding(12.dp)
-                )
-            }
-        }
-        when (
-            todayContentState(
-                isLoading = uiState.isLoading,
-                hasErrorMessage = uiState.errorMessage != null,
-                hasEvents = uiState.intakeEvents.isNotEmpty()
-            )
-        ) {
-            TodayContentState.Loading -> LoadingState()
-            TodayContentState.Error -> Text(
-                text = uiState.errorMessage.orEmpty(),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-
-            TodayContentState.Empty -> TodayEmptyState(
-                onAddMedicationClick = onEditMedicationsClick,
-                onCheckScheduleClick = onEditScheduleClick
-            )
-
-            TodayContentState.Events -> IntakeEventList(
-                intakeEvents = uiState.intakeEvents,
-                highlightedEventId = uiState.highlightedEventId,
-                currentDateTime = uiState.currentDateTime,
-                onMarkTaken = todayViewModel::markIntakeTaken,
-                onMarkSkipped = todayViewModel::markIntakeSkipped,
-                onPostpone = todayViewModel::postponeIntake,
-                onHighlightShown = todayViewModel::clearHighlightedEvent
-            )
-        }
+    var isPrivacyPolicyVisible by remember { mutableStateOf(false) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { todayViewModel.loadToday() }
+    RefreshIntakeTime(todayViewModel)
+    TodayContent(
+        uiState = uiState,
+        onEditScheduleClick = onEditScheduleClick,
+        onEditMedicationsClick = onEditMedicationsClick,
+        onMarkTaken = todayViewModel::markIntakeTaken,
+        onMarkSkipped = todayViewModel::markIntakeSkipped,
+        onPostpone = todayViewModel::postponeIntake,
+        onHighlightShown = todayViewModel::clearHighlightedEvent,
+        onEnableNotificationsClick = todayViewModel::requestNotificationPermission,
+        onOpenSettingsClick = todayViewModel::openNotificationSettings,
+        onOpenExactReminderSettingsClick = todayViewModel::openExactReminderSettings,
+        onPrivacyPolicyClick = { isPrivacyPolicyVisible = true },
+        onRetry = todayViewModel::loadToday,
+    )
+    if (isPrivacyPolicyVisible) {
+        PrivacyPolicyDialog(onDismissRequest = { isPrivacyPolicyVisible = false })
     }
 }
 
 @Composable
-private fun TodayEmptyState(
-    onAddMedicationClick: () -> Unit,
-    onCheckScheduleClick: () -> Unit
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "На сегодня приёмов нет",
-                style = MaterialTheme.typography.titleMedium
-            )
-            Text(
-                text = "Добавьте лекарство или проверьте режим дня, чтобы запланировать напоминания.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Button(onClick = onAddMedicationClick) {
-                    Text(text = "Добавить лекарство")
-                }
-                OutlinedButton(onClick = onCheckScheduleClick) {
-                    Text(text = "Режим дня")
-                }
+internal fun RefreshIntakeTime(todayViewModel: TodayViewModel) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(todayViewModel, lifecycleOwner) {
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                delay(DISPLAY_CLOCK_REFRESH_MILLIS)
+                todayViewModel.refreshDisplayedTime()
             }
         }
     }
 }
 
 @Composable
-private fun NotificationStatusBlock(
-    permissionStatus: NotificationPermissionStatus,
-    onEnableNotificationsClick: () -> Unit,
-    onOpenSettingsClick: () -> Unit
-) {
-    val prompt = notificationPermissionPrompt(permissionStatus) ?: return
-    val onActionClick = when (prompt.action) {
-        NotificationPermissionAction.Request -> onEnableNotificationsClick
-        NotificationPermissionAction.OpenSettings -> onOpenSettingsClick
-    }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = prompt.message,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Button(onClick = onActionClick) {
-                Text(text = prompt.actionLabel)
-            }
-        }
-    }
-}
-
-@Composable
-private fun LoadingState() {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 32.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        CircularProgressIndicator()
-    }
-}
-
-@Composable
-private fun IntakeEventList(
-    intakeEvents: List<MedicationIntakeEvent>,
-    highlightedEventId: String?,
-    currentDateTime: LocalDateTime?,
+internal fun TodayContent(
+    uiState: TodayUiState,
+    onEditScheduleClick: () -> Unit,
+    onEditMedicationsClick: () -> Unit,
     onMarkTaken: (String) -> Unit,
     onMarkSkipped: (String) -> Unit,
     onPostpone: (String) -> Unit,
-    onHighlightShown: () -> Unit
+    onHighlightShown: () -> Unit,
+    onEnableNotificationsClick: () -> Unit,
+    onOpenSettingsClick: () -> Unit,
+    onOpenExactReminderSettingsClick: () -> Unit,
+    onPrivacyPolicyClick: () -> Unit,
+    onRetry: () -> Unit,
 ) {
     val listState = rememberLazyListState()
-    LaunchedEffect(highlightedEventId, intakeEvents) {
-        if (highlightedEventId == null) {
-            return@LaunchedEffect
+    val permissionPrompt = notificationPermissionPrompt(uiState.notificationPermissionStatus)
+    val contentState = todayContentState(uiState.isLoading, uiState.errorMessage != null, uiState.intakeEvents.isNotEmpty())
+    val eventIds = uiState.intakeGroups.flatMap { group -> group.intakes.map { it.eventId } }
+    val headerItemCount = INTAKE_LIST_HEADER_COUNT + listOf(
+        permissionPrompt != null,
+        !uiState.exactRemindersAllowed,
+        uiState.notificationErrorMessage != null,
+    ).count { it }
+    LaunchedEffect(uiState.highlightedEventId, eventIds, contentState, headerItemCount) {
+        val highlightedId = uiState.highlightedEventId ?: return@LaunchedEffect
+        if (contentState != TodayContentState.Events) return@LaunchedEffect
+        var itemIndex = headerItemCount
+        for (group in uiState.intakeGroups) {
+            val indexInGroup = group.intakes.indexOfFirst { it.eventId == highlightedId }
+            if (indexInGroup >= 0) {
+                listState.animateScrollToItem(itemIndex + 1 + indexInGroup)
+                delay(HIGHLIGHT_VISIBLE_MILLIS)
+                onHighlightShown()
+                break
+            }
+            itemIndex += group.intakes.size + 1
         }
-        val highlightedIndex = intakeEvents.indexOfFirst { event -> event.eventId == highlightedEventId }
-        if (highlightedIndex < 0) {
-            return@LaunchedEffect
-        }
-        listState.animateScrollToItem(highlightedIndex)
-        delay(HIGHLIGHT_VISIBLE_MILLIS)
-        onHighlightShown()
     }
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
         state = listState,
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        modifier = Modifier.fillMaxSize().safeDrawingPadding(),
+        contentPadding = PaddingValues(horizontal = AppSpacing.standard, vertical = AppSpacing.section),
+        verticalArrangement = Arrangement.spacedBy(AppSpacing.medium),
     ) {
-        items(intakeEvents) { intakeEvent ->
-            IntakeEventCard(
-                intakeEvent = intakeEvent,
-                isHighlighted = intakeEvent.eventId == highlightedEventId,
-                isExpired = currentDateTime != null &&
-                    isMedicationIntakeEventExpired(intakeEvent, currentDateTime),
-                onMarkTaken = onMarkTaken,
-                onMarkSkipped = onMarkSkipped,
-                onPostpone = onPostpone
-            )
+        item(key = "header") {
+            Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.standard)) {
+                ScreenHeader(uiState.screenTitle.asString(), subtitle = uiState.dateTitle?.asString().orEmpty().takeIf { it.isNotEmpty() })
+                Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
+                    OutlinedButton(onClick = onEditMedicationsClick, modifier = Modifier.weight(1f)) {
+                        Text(TodayLabels.medications.asString())
+                    }
+                    OutlinedButton(onClick = onEditScheduleClick, modifier = Modifier.weight(1f)) {
+                        Text(TodayLabels.schedule.asString())
+                    }
+                }
+            }
+        }
+        if (permissionPrompt != null) {
+            item(key = "permission") {
+                Notice(permissionPrompt.message.asString()) {
+                    TextButton(onClick = when (permissionPrompt.action) {
+                        NotificationPermissionAction.Request -> onEnableNotificationsClick
+                        NotificationPermissionAction.OpenSettings -> onOpenSettingsClick
+                    }) { Text(permissionPrompt.actionLabel.asString()) }
+                }
+            }
+        }
+        if (!uiState.exactRemindersAllowed) {
+            item(key = "exact") {
+                Notice(TodayLabels.exactReminders.asString(), isError = true) {
+                    TextButton(onClick = onOpenExactReminderSettingsClick) {
+                        Text(TodayLabels.exactRemindersAction.asString())
+                    }
+                }
+            }
+        }
+        item(key = "privacy-policy") {
+            TextButton(onClick = onPrivacyPolicyClick) { Text(UiLabels.privacyPolicy.asString()) }
+        }
+        uiState.notificationErrorMessage?.let { message ->
+            item(key = "notification-error") { Notice(message.asString(), isError = true) }
+        }
+        when (contentState) {
+            TodayContentState.Loading -> item { LoadingIndicator() }
+            TodayContentState.Error -> item {
+                Notice(uiState.errorMessage?.asString().orEmpty(), isError = true) {
+                    TextButton(onClick = onRetry) { Text(TodayLabels.retry.asString()) }
+                }
+            }
+            TodayContentState.Empty -> item {
+                Column(
+                    Modifier.padding(vertical = AppSpacing.large),
+                    verticalArrangement = Arrangement.spacedBy(AppSpacing.standard),
+                ) {
+                    Icon(AppIcons.Medication, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(32.dp))
+                    SectionHeader(TodayLabels.emptyTitle.asString())
+                    Text(TodayLabels.emptyMessage.asString(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    PrimaryActionButton(TodayLabels.addMedication.asString(), onEditMedicationsClick)
+                }
+            }
+            TodayContentState.Events -> {
+                item(key = "progress") {
+                    IntakeProgress(uiState.takenCount, uiState.intakeEvents.size, uiState.completionFraction)
+                }
+                item(key = "schedule-title") {
+                    Column(Modifier.padding(top = AppSpacing.medium)) { SectionHeader(TodayLabels.plan.asString()) }
+                }
+                uiState.intakeGroups.forEach { group ->
+                    item(key = "time-${group.intakes.first().scheduledDateTime}") {
+                        IconLabel(
+                            AppIcons.Clock,
+                            group.timeLabel.asString(),
+                            modifier = Modifier.padding(top = AppSpacing.compact),
+                        )
+                    }
+                    items(group.intakes, key = { it.eventId }) { intake ->
+                        MedicationIntakeCard(
+                            intake = intake,
+                            isHighlighted = intake.eventId == uiState.highlightedEventId,
+                            onMarkTaken = { onMarkTaken(intake.eventId) },
+                            onMarkSkipped = { onMarkSkipped(intake.eventId) },
+                            onPostpone = { onPostpone(intake.eventId) },
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun IntakeEventCard(
-    intakeEvent: MedicationIntakeEvent,
-    isHighlighted: Boolean,
-    isExpired: Boolean,
-    onMarkTaken: (String) -> Unit,
-    onMarkSkipped: (String) -> Unit,
-    onPostpone: (String) -> Unit
-) {
-    val cardColors = if (isHighlighted) {
-        CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-    } else {
-        CardDefaults.cardColors()
-    }
-    val cardModifier = if (isHighlighted) {
-        Modifier
-            .fillMaxWidth()
-            .border(
-                width = 2.dp,
-                color = MaterialTheme.colorScheme.primary,
-                shape = RoundedCornerShape(12.dp)
-            )
-    } else {
-        Modifier.fillMaxWidth()
-    }
-    Card(modifier = cardModifier, colors = cardColors) {
+private fun IntakeProgress(takenCount: Int, totalCount: Int, completionFraction: Float) {
+    Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = MaterialTheme.shapes.medium) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            Modifier.fillMaxWidth().padding(AppSpacing.standard),
+            verticalArrangement = Arrangement.spacedBy(AppSpacing.medium),
         ) {
-            Text(
-                text = "${formatTimeOfDay(intakeEvent.scheduledDateTime.time)} · ${intakeEvent.medicationName}",
-                style = MaterialTheme.typography.titleMedium
+            Text(TodayLabels.dailyProgress.asString(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Text(intakeProgressLabel(takenCount, totalCount).asString(), style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            LinearProgressIndicator(
+                progress = { completionFraction },
+                modifier = Modifier.fillMaxWidth().height(6.dp),
+                trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.12f),
+                drawStopIndicator = {},
             )
-            Text(
-                text = intakeEvent.dosageText,
-                style = MaterialTheme.typography.bodyMedium
-            )
-            Text(
-                text = intakeMomentLabel(intakeEvent.intakeMoment),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = intakeStatusLabel(intakeEvent.status),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-            if (isExpired) {
-                Text(
-                    text = overdueLabel(),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-            IntakeEventActions(
-                intakeEvent = intakeEvent,
-                onMarkTaken = onMarkTaken,
-                onMarkSkipped = onMarkSkipped,
-                onPostpone = onPostpone
-            )
-        }
-    }
-}
-
-@Composable
-private fun IntakeEventActions(
-    intakeEvent: MedicationIntakeEvent,
-    onMarkTaken: (String) -> Unit,
-    onMarkSkipped: (String) -> Unit,
-    onPostpone: (String) -> Unit
-) {
-    val actionsVisible = intakeEvent.status == MedicationIntakeStatus.Scheduled ||
-        intakeEvent.status == MedicationIntakeStatus.Postponed
-    if (actionsVisible) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(onClick = { onMarkTaken(intakeEvent.eventId) }) {
-                Text(text = "Принял")
-            }
-            OutlinedButton(onClick = { onMarkSkipped(intakeEvent.eventId) }) {
-                Text(text = "Пропустить")
-            }
-            TextButton(onClick = { onPostpone(intakeEvent.eventId) }) {
-                Text(text = postponeActionLabel())
+            if (takenCount == totalCount) {
+                Text(TodayLabels.complete.asString(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
             }
         }
     }

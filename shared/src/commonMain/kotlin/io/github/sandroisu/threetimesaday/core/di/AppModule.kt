@@ -54,7 +54,7 @@ val commonAppModule = module {
             medicationReminderScheduler = get(),
             timeProvider = get(),
             buildReminderMessage = { event ->
-                "${event.dosageText} · ${intakeMomentLabel(event.intakeMoment)}"
+                "${event.dosageText} · ${intakeMomentLabel(event.intakeMoment).resolve()}"
             }
         )
     }

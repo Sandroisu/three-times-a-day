@@ -10,6 +10,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.util.Log
+import io.github.sandroisu.threetimesaday.shared.R
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class MedicationReminderReceiver : BroadcastReceiver() {
 
@@ -20,9 +25,10 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         val notificationRequestCode = intent.getIntExtra(EXTRA_NOTIFICATION_REQUEST_CODE, 0)
         val notificationManager = context.getSystemService(NotificationManager::class.java) ?: return
         if (!hasPostNotificationsPermission(context)) {
+            rescheduleFollowingReminders(context, notificationId)
             return
         }
-        ensureChannel(notificationManager)
+        ensureChannel(context, notificationManager)
         val notification = buildNotification(
             context = context,
             title = title,
@@ -31,6 +37,7 @@ class MedicationReminderReceiver : BroadcastReceiver() {
             notificationRequestCode = notificationRequestCode
         )
         notificationManager.notify(notificationRequestCode, notification)
+        rescheduleFollowingReminders(context, notificationId)
     }
 
     private fun hasPostNotificationsPermission(context: Context): Boolean =
@@ -40,14 +47,15 @@ class MedicationReminderReceiver : BroadcastReceiver() {
             true
         }
 
-    private fun ensureChannel(notificationManager: NotificationManager) {
+    private fun ensureChannel(context: Context, notificationManager: NotificationManager) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val existingChannel = notificationManager.getNotificationChannel(CHANNEL_ID)
-            if (existingChannel == null) {
-                notificationManager.createNotificationChannel(
-                    NotificationChannel(CHANNEL_ID, CHANNEL_NAME, NotificationManager.IMPORTANCE_HIGH)
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    CHANNEL_ID,
+                    context.getString(R.string.medication_reminder_channel),
+                    NotificationManager.IMPORTANCE_HIGH,
                 )
-            }
+            )
         }
     }
 
@@ -95,14 +103,30 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         )
     }
 
+    private fun rescheduleFollowingReminders(context: Context, notificationId: String) {
+        val pendingResult = goAsync()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                AndroidMedicationReminderRescheduler.reschedule(
+                    context = context.applicationContext,
+                    deliveredNotificationId = notificationId,
+                )
+            } catch (rescheduleFailure: Exception) {
+                Log.e(LOG_TAG, "Could not schedule following medication reminder", rescheduleFailure)
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
     companion object {
         const val CHANNEL_ID = "medication_reminders"
-        const val CHANNEL_NAME = "Напоминания о приёме"
         const val EXTRA_TITLE = "extra_title"
         const val EXTRA_MESSAGE = "extra_message"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_NOTIFICATION_REQUEST_CODE = "extra_notification_request_code"
         const val LAUNCH_EXTRA_NOTIFICATION_ID = "io.github.sandroisu.threetimesaday.LAUNCH_NOTIFICATION_ID"
         const val LAUNCH_EXTRA_EVENT_ID = "io.github.sandroisu.threetimesaday.LAUNCH_EVENT_ID"
+        const val LOG_TAG = "MedicationReminder"
     }
 }

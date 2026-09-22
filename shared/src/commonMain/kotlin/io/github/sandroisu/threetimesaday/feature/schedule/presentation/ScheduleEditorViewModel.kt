@@ -4,9 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.core.time.parseTimeOfDay
+import io.github.sandroisu.threetimesaday.core.ui.UiLabels
+import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
-import kotlinx.datetime.LocalTime
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,8 +17,9 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalTime
 
-class ScheduleEditorViewModel(
+internal class ScheduleEditorViewModel(
     private val dailyScheduleRepository: DailyScheduleRepository
 ) : ViewModel() {
 
@@ -67,7 +69,7 @@ class ScheduleEditorViewModel(
             } catch (saveFailure: Exception) {
                 mutableUiState.update { stateBeforeFailure ->
                     stateBeforeFailure.copy(
-                        generalErrorMessage = saveFailure.message ?: "Не удалось сохранить режим дня"
+                        generalErrorMessage = ScheduleLabels.saveError
                     )
                 }
             }
@@ -100,7 +102,7 @@ class ScheduleEditorViewModel(
                 mutableUiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
-                        generalErrorMessage = loadFailure.message ?: "Не удалось загрузить режим дня"
+                        generalErrorMessage = ScheduleLabels.loadError
                     )
                 }
             }
@@ -123,7 +125,7 @@ class ScheduleEditorViewModel(
             lunchTimeError = errorFor(lunchTime),
             dinnerTimeError = errorFor(dinnerTime),
             sleepTimeError = errorFor(sleepTime),
-            generalErrorMessage = if (hasDuplicates) DUPLICATE_TIME_MESSAGE else null,
+            generalErrorMessage = if (hasDuplicates) ScheduleLabels.duplicateError else null,
             isSaveEnabled = allValid && !hasDuplicates && !state.isLoading
         )
     }
@@ -151,11 +153,7 @@ class ScheduleEditorViewModel(
         )
     }
 
-    private fun errorFor(parsedTime: LocalTime?): String? =
-        if (parsedTime == null) TIME_FORMAT_ERROR_MESSAGE else null
+    private fun errorFor(parsedTime: LocalTime?): UiText? =
+        if (parsedTime == null) UiLabels.timeError else null
 
-    private companion object {
-        const val TIME_FORMAT_ERROR_MESSAGE = "Введите время в формате HH:mm"
-        const val DUPLICATE_TIME_MESSAGE = "Времена в режиме дня не должны повторяться"
-    }
 }

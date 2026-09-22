@@ -4,6 +4,11 @@ import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissi
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.notification_denied_message
+import threetimesaday.shared.generated.resources.notification_request_action
+import threetimesaday.shared.generated.resources.notification_request_message
+import threetimesaday.shared.generated.resources.notification_settings_action
 
 class NotificationPermissionPromptTest {
 
@@ -32,14 +37,20 @@ class NotificationPermissionPromptTest {
     }
 
     @Test
-    fun promptsProvideNonEmptyMessageAndLabel() {
+    fun promptsProvideLocalizedMessageAndLabel() {
         listOf(
             NotificationPermissionStatus.NotDetermined,
             NotificationPermissionStatus.Denied
         ).forEach { status ->
             val prompt = notificationPermissionPrompt(status)
-            assertEquals(true, prompt?.message?.isNotBlank())
-            assertEquals(true, prompt?.actionLabel?.isNotBlank())
+            assertEquals(
+                if (status == NotificationPermissionStatus.NotDetermined) Res.string.notification_request_message else Res.string.notification_denied_message,
+                prompt?.message?.resource,
+            )
+            assertEquals(
+                if (status == NotificationPermissionStatus.NotDetermined) Res.string.notification_request_action else Res.string.notification_settings_action,
+                prompt?.actionLabel?.resource,
+            )
         }
     }
 }

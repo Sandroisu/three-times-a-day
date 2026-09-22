@@ -22,9 +22,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.plus
 
-class TodayViewModel(
+internal class TodayViewModel(
     private val timeProvider: TimeProvider,
     private val dailyScheduleRepository: DailyScheduleRepository,
     private val medicationRepository: MedicationRepository,
@@ -38,6 +39,7 @@ class TodayViewModel(
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
     val uiState: StateFlow<TodayUiState> = mutableUiState.asStateFlow()
+    private var displayedRecords: List<MedicationIntakeRecord> = emptyList()
 
     init {
         loadToday()
@@ -60,12 +62,16 @@ class TodayViewModel(
                 )
                 val records = medicationIntakeRecordRepository.getRecordsForDate(currentDate)
                 val intakeEvents = applyMedicationIntakeRecords(generatedEvents, records)
+                displayedRecords = records
                 mutableUiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
                         dateTitle = formatScreenDate(currentDate),
                         intakeEvents = intakeEvents,
                         currentDateTime = currentDateTime,
+                        intakeGroups = todayIntakeGroups(intakeEvents, records, currentDateTime),
+                        completionFraction = intakeCompletionFraction(intakeEvents),
+                        takenCount = intakeEvents.count { it.status == MedicationIntakeStatus.Taken },
                         errorMessage = null
                     )
                 }
@@ -77,13 +83,33 @@ class TodayViewModel(
                     }
                     rescheduleMedicationReminders()
                 }
+                try {
+                    val tomorrow = currentDate.plus(1, DateTimeUnit.DAY)
+                    val tomorrowEvents = applyMedicationIntakeRecords(
+                        generateMedicationIntakeEventsForDate(tomorrow, dailySchedule, medications),
+                        medicationIntakeRecordRepository.getRecordsForDate(tomorrow),
+                    )
+                    mutableUiState.update { currentState ->
+                        currentState.copy(
+                            upcomingIntakes = (intakeEvents + tomorrowEvents).filter { event ->
+                                event.scheduledDateTime > currentDateTime &&
+                                    (event.status == MedicationIntakeStatus.Scheduled || event.status == MedicationIntakeStatus.Postponed)
+                            }.sortedBy { it.scheduledDateTime },
+                            upcomingIntakesError = null,
+                        )
+                    }
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (loadFailure: Exception) {
+                    mutableUiState.update { it.copy(upcomingIntakesError = TodayLabels.upcomingError) }
+                }
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (loadFailure: Exception) {
                 mutableUiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
-                        errorMessage = loadFailure.message ?: "Не удалось загрузить приёмы"
+                        errorMessage = TodayLabels.loadError
                     )
                 }
             }
@@ -92,6 +118,27 @@ class TodayViewModel(
 
     fun openNotificationSettings() {
         appSettingsOpener.openAppSettings()
+    }
+
+    fun openExactReminderSettings() {
+        appSettingsOpener.openExactReminderSettings()
+    }
+
+    fun refreshDisplayedTime() {
+        val displayedState = mutableUiState.value
+        if (displayedState.isLoading || displayedState.currentDateTime == null) return
+        val currentDateTime = timeProvider.currentDateTime()
+        if (displayedState.currentDateTime.date != currentDateTime.date || currentDateTime < displayedState.currentDateTime) {
+            loadToday()
+            return
+        }
+        mutableUiState.update { currentState ->
+            currentState.copy(
+                currentDateTime = currentDateTime,
+                intakeGroups = todayIntakeGroups(currentState.intakeEvents, displayedRecords, currentDateTime),
+                upcomingIntakes = currentState.upcomingIntakes.filter { it.scheduledDateTime > currentDateTime },
+            )
+        }
     }
 
     fun highlightEvent(eventId: String) {
@@ -119,8 +166,7 @@ class TodayViewModel(
             } catch (permissionFailure: Exception) {
                 mutableUiState.update { currentState ->
                     currentState.copy(
-                        notificationErrorMessage = permissionFailure.message
-                            ?: "Не удалось запросить разрешение на уведомления"
+                        notificationErrorMessage = TodayLabels.permissionError
                     )
                 }
             }
@@ -150,7 +196,7 @@ class TodayViewModel(
             } catch (saveFailure: Exception) {
                 mutableUiState.update { currentState ->
                     currentState.copy(
-                        errorMessage = saveFailure.message ?: "Не удалось сохранить статус приёма"
+                        errorMessage = TodayLabels.saveError
                     )
                 }
                 return@launch
@@ -193,8 +239,7 @@ class TodayViewModel(
         } catch (notificationFailure: Exception) {
             mutableUiState.update { currentState ->
                 currentState.copy(
-                    notificationErrorMessage = notificationFailure.message
-                        ?: "Не удалось обновить уведомления"
+                    notificationErrorMessage = TodayLabels.notificationError
                 )
             }
         }
