@@ -1,17 +1,19 @@
 package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import kotlin.test.Test
-import kotlin.test.assertTrue
+import kotlin.test.assertEquals
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.intake_postpone
 
 class TodayLabelsPostponeTest {
 
     @Test
     fun postponeActionLabelShowsConfiguredInterval() {
-        assertTrue(postponeActionLabel().contains(MEDICATION_POSTPONE_MINUTES.toString()))
+        assertEquals(listOf(MEDICATION_POSTPONE_MINUTES), postponeActionLabel().arguments)
     }
 
     @Test
-    fun postponeActionLabelMentionsPostponing() {
-        assertTrue(postponeActionLabel().startsWith("Отложить"))
+    fun postponeActionLabelUsesLocalizedResource() {
+        assertEquals(Res.string.intake_postpone, postponeActionLabel().resource)
     }
 }

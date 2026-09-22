@@ -9,6 +9,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import kotlinx.coroutines.test.runTest
@@ -70,20 +71,28 @@ class RescheduleMedicationRemindersUseCaseTest {
     }
 
     @Test
-    fun doesNotScheduleEventBeyondHorizon() = runTest {
+    fun schedulesQuarterlyEventBeyondPreviousTwoDayHorizon() = runTest {
         val scheduler = FakeScheduler()
         val useCase = createUseCase(
-            medications = listOf(exactTimeMedication("vitamin", LocalTime(20, 0), courseEndDate = afterNextDate)),
-            scheduler = scheduler
+            medications = listOf(
+                exactTimeMedication(
+                    medicationId = "vitamin",
+                    time = LocalTime(20, 0),
+                    courseEndDate = null,
+                    courseStartDate = LocalDate(2026, 1, 14),
+                    recurrence = MedicationRecurrence.EveryMonthsOnDay(
+                        intervalMonths = 3,
+                        dayOfMonth = 14,
+                    ),
+                ),
+            ),
+            scheduler = scheduler,
+            dateTime = LocalDateTime(LocalDate(2026, 1, 15), LocalTime(12, 0)),
         )
 
         useCase()
 
-        assertFalse(
-            scheduler.scheduledNotifications.any { notification ->
-                notification.scheduledDateTime.date == afterNextDate
-            }
-        )
+        assertEquals(LocalDateTime(LocalDate(2026, 4, 14), LocalTime(20, 0)), scheduler.scheduledNotifications.single().scheduledDateTime)
     }
 
     @Test
@@ -139,6 +148,20 @@ class RescheduleMedicationRemindersUseCaseTest {
     }
 
     @Test
+    fun schedulingAfterReminderDeliveryKeepsExistingReminders() = runTest {
+        val scheduler = FakeScheduler()
+        val useCase = createUseCase(
+            medications = listOf(exactTimeMedication("vitamin", LocalTime(18, 0), courseEndDate = testDate)),
+            scheduler = scheduler,
+        )
+
+        useCase(replaceExistingReminders = false)
+
+        assertEquals(0, scheduler.cancelAllCount)
+        assertEquals(1, scheduler.scheduledNotifications.size)
+    }
+
+    @Test
     fun schedulerFailurePropagates() = runTest {
         val scheduler = FakeScheduler()
         scheduler.scheduleError = IllegalStateException("Планировщик недоступен")
@@ -153,7 +176,8 @@ class RescheduleMedicationRemindersUseCaseTest {
     private fun createUseCase(
         medications: List<Medication>,
         recordRepository: FakeRecordRepository = FakeRecordRepository(),
-        scheduler: FakeScheduler = FakeScheduler()
+        scheduler: FakeScheduler = FakeScheduler(),
+        dateTime: LocalDateTime = currentDateTime,
     ): RescheduleMedicationRemindersUseCase = RescheduleMedicationRemindersUseCase(
         dailyScheduleRepository = FakeScheduleRepository(),
         medicationRepository = FakeMedicationRepository(medications),
@@ -161,7 +185,7 @@ class RescheduleMedicationRemindersUseCaseTest {
         generateMedicationIntakeEventsForDate = GenerateMedicationIntakeEventsForDateUseCase(),
         applyMedicationIntakeRecords = ApplyMedicationIntakeRecordsUseCase(),
         medicationReminderScheduler = scheduler,
-        timeProvider = FakeTimeProvider(currentDateTime),
+        timeProvider = FakeTimeProvider(dateTime),
         buildReminderMessage = { event -> event.medicationName }
     )
 
@@ -189,14 +213,17 @@ class RescheduleMedicationRemindersUseCaseTest {
     private fun exactTimeMedication(
         medicationId: String,
         time: LocalTime,
-        courseEndDate: LocalDate?
+        courseEndDate: LocalDate?,
+        courseStartDate: LocalDate = LocalDate(2020, 1, 1),
+        recurrence: MedicationRecurrence = MedicationRecurrence.Daily,
     ): Medication = Medication(
         id = medicationId,
         name = "Препарат $medicationId",
         dosageText = "1 таблетка",
         intakeRule = MedicationIntakeRule.AtExactTime(time),
-        courseStartDate = LocalDate(2020, 1, 1),
-        courseEndDate = courseEndDate
+        courseStartDate = courseStartDate,
+        courseEndDate = courseEndDate,
+        recurrence = recurrence,
     )
 
     private val defaultSchedule = DailySchedule(

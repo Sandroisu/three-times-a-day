@@ -65,8 +65,8 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
         )
         val dateComponents = NSDateComponents().apply {
             year = notification.scheduledDateTime.year.toLong()
-            month = notification.scheduledDateTime.monthNumber.toLong()
-            day = notification.scheduledDateTime.dayOfMonth.toLong()
+            month = (notification.scheduledDateTime.month.ordinal + 1).toLong()
+            day = notification.scheduledDateTime.day.toLong()
             hour = notification.scheduledDateTime.hour.toLong()
             minute = notification.scheduledDateTime.minute.toLong()
             second = notification.scheduledDateTime.second.toLong()

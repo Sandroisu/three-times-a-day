@@ -1,12 +1,23 @@
 package io.github.sandroisu.threetimesaday.feature.medication.presentation
 
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
+import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIdGenerator
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -16,15 +27,10 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.rule_exact_time
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MedicationEditorViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -174,6 +180,61 @@ class MedicationEditorViewModelTest {
         assertEquals(MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterWakeUp), savedMedication.intakeRule)
         assertEquals(testDate, savedMedication.courseStartDate)
         assertNull(savedMedication.courseEndDate)
+        assertEquals(MedicationRecurrence.Daily, savedMedication.recurrence)
+    }
+
+    @Test
+    fun monthlyRecurrenceAndCourseDatesAreSaved() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Витамин D")
+        viewModel.onDosageChanged("1 капсула")
+        viewModel.onCourseStartDateChanged("14.01.2026")
+        viewModel.onCourseEndDateChanged("14.01.2027")
+        viewModel.onMonthlyRecurrenceSelected()
+        viewModel.onMonthlyIntervalChanged("3")
+        viewModel.onMonthlyDayOfMonthChanged("14")
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        val savedMedication = medicationRepository.currentMedications().single()
+        assertEquals(LocalDate(2026, 1, 14), savedMedication.courseStartDate)
+        assertEquals(LocalDate(2027, 1, 14), savedMedication.courseEndDate)
+        assertEquals(
+            MedicationRecurrence.EveryMonthsOnDay(intervalMonths = 3, dayOfMonth = 14),
+            savedMedication.recurrence,
+        )
+    }
+
+    @Test
+    fun monthlyRecurrenceWithInvalidDayDisablesSave() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeMedicationRepository(emptyList()))
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Витамин D")
+        viewModel.onDosageChanged("1 капсула")
+        viewModel.onMonthlyRecurrenceSelected()
+        viewModel.onMonthlyDayOfMonthChanged("32")
+
+        assertFalse(viewModel.uiState.value.isSaveEnabled)
+        assertNotNull(viewModel.uiState.value.monthlyDayOfMonthError)
+    }
+
+    @Test
+    fun courseEndBeforeStartDisablesSave() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeMedicationRepository(emptyList()))
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Аспирин")
+        viewModel.onDosageChanged("1 таблетка")
+        viewModel.onCourseStartDateChanged("14.07.2026")
+        viewModel.onCourseEndDateChanged("13.07.2026")
+
+        assertFalse(viewModel.uiState.value.isSaveEnabled)
+        assertNotNull(viewModel.uiState.value.courseEndDateError)
     }
 
     @Test
@@ -373,6 +434,62 @@ class MedicationEditorViewModelTest {
         assertNotNull(viewModel.uiState.value.generalErrorMessage)
         assertTrue(receivedDeletedEvents.isEmpty())
         collectJob.cancel()
+    }
+
+    @Test
+    fun openingExistingMedicationShowsDetailsAndCancelRestoresSavedFields() = runTest(testDispatcher) {
+        val medication = createMedication("existing", "Магний", "1 таблетка", MedicationIntakeRule.AtExactTime(LocalTime(21, 0)))
+        val viewModel = createViewModel(FakeMedicationRepository(listOf(medication)))
+        viewModel.start(medication.id)
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isEditing)
+        assertEquals(UiText(Res.string.rule_exact_time, listOf("21:00")), viewModel.uiState.value.intakeRuleLabel)
+
+        viewModel.editMedication()
+        viewModel.onNameChanged("Изменение")
+        viewModel.showDetails()
+
+        assertFalse(viewModel.uiState.value.isEditing)
+        assertEquals("Магний", viewModel.uiState.value.nameText)
+    }
+
+    @Test
+    fun restartingSameSessionKeepsDraftAndNewSessionStartsClean() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeMedicationRepository(emptyList()))
+        viewModel.start(null)
+        viewModel.onNameChanged("Черновик")
+        viewModel.onExactTimeRuleSelected()
+        viewModel.onExactTimeChanged("08:30")
+
+        viewModel.start(null)
+        assertEquals("Черновик", viewModel.uiState.value.nameText)
+        assertEquals("08:30", viewModel.uiState.value.exactTimeText)
+
+        viewModel.finishSession()
+        viewModel.start(null)
+        assertEquals("", viewModel.uiState.value.nameText)
+    }
+
+    @Test
+    fun editingDistributedMedicationPreservesIntakeRuleAndCourseDates() = runTest(testDispatcher) {
+        val rule = MedicationIntakeRule.SeveralTimesPerDay(listOf(MedicationIntakeMoment.AfterWakeUp, MedicationIntakeMoment.AfterLunch, MedicationIntakeMoment.BeforeSleep))
+        val medication = createMedication("existing", "Магний", "1 таблетка", rule).copy(courseEndDate = LocalDate(2026, 12, 1))
+        val repository = FakeMedicationRepository(listOf(medication))
+        val viewModel = createViewModel(repository)
+        viewModel.start(medication.id)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isDistributedRule)
+        viewModel.editMedication()
+        viewModel.onDosageChanged("2 таблетки")
+        viewModel.save()
+        advanceUntilIdle()
+
+        val updated = repository.currentMedications().single()
+        assertEquals(rule, updated.intakeRule)
+        assertEquals(medication.courseStartDate, updated.courseStartDate)
+        assertEquals(medication.courseEndDate, updated.courseEndDate)
+        assertEquals("2 таблетки", updated.dosageText)
     }
 
     private fun createViewModel(

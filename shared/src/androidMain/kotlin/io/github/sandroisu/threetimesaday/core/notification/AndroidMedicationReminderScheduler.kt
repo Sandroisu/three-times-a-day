@@ -9,6 +9,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import io.github.sandroisu.threetimesaday.shared.R
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
@@ -132,15 +133,13 @@ class AndroidMedicationReminderScheduler(
     private fun ensureChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = context.getSystemService(NotificationManager::class.java) ?: return
-            if (notificationManager.getNotificationChannel(MedicationReminderReceiver.CHANNEL_ID) == null) {
-                notificationManager.createNotificationChannel(
-                    NotificationChannel(
-                        MedicationReminderReceiver.CHANNEL_ID,
-                        MedicationReminderReceiver.CHANNEL_NAME,
-                        NotificationManager.IMPORTANCE_HIGH
-                    )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    MedicationReminderReceiver.CHANNEL_ID,
+                    context.getString(R.string.medication_reminder_channel),
+                    NotificationManager.IMPORTANCE_HIGH,
                 )
-            }
+            )
         }
     }
 

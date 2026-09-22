@@ -13,4 +13,6 @@ class IosAppSettingsOpener : AppSettingsOpener {
             application.openURL(settingsUrl, emptyMap<Any?, Any?>(), null)
         }
     }
+
+    override fun openExactReminderSettings() = Unit
 }

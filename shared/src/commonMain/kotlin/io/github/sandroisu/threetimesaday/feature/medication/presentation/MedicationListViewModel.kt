@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 
-class MedicationListViewModel(
+internal class MedicationListViewModel(
     private val medicationRepository: MedicationRepository,
     private val timeProvider: TimeProvider
 ) : ViewModel() {
@@ -46,7 +46,7 @@ class MedicationListViewModel(
                 mutableUiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
-                        errorMessage = loadFailure.message ?: "Не удалось загрузить препараты"
+                        errorMessage = MedicationLabels.listError
                     )
                 }
             }
@@ -58,9 +58,11 @@ class MedicationListViewModel(
         name = medication.name,
         dosageText = medication.dosageText,
         intakeRuleText = medicationIntakeRuleText(medication.intakeRule),
+        recurrenceText = medicationRecurrenceLabel(medication.recurrence),
         courseLabel = medicationCourseLabel(
             courseStartDate = medication.courseStartDate,
             courseEndDate = medication.courseEndDate,
+            recurrence = medication.recurrence,
             today = today
         )
     )

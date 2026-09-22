@@ -3,6 +3,7 @@ package io.github.sandroisu.threetimesaday.feature.today.domain
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -185,6 +186,67 @@ class GenerateMedicationIntakeEventsForDateUseCaseTest {
     }
 
     @Test
+    fun medicationRepeatingEveryThirdMonthOnFourteenthProducesEventInMatchingMonth() {
+        val medication = createMedication(
+            intakeRule = MedicationIntakeRule.AtExactTime(LocalTime(9, 0)),
+            courseStartDate = LocalDate(2026, 1, 14),
+            recurrence = MedicationRecurrence.EveryMonthsOnDay(
+                intervalMonths = 3,
+                dayOfMonth = 14,
+            ),
+        )
+
+        val events = generateMedicationIntakeEventsForDate(
+            date = LocalDate(2026, 7, 14),
+            dailySchedule = createDailySchedule(),
+            medications = listOf(medication),
+        )
+
+        assertEquals(1, events.size)
+        assertEquals(LocalTime(9, 0), events.single().scheduledDateTime.time)
+    }
+
+    @Test
+    fun medicationRepeatingEveryThirdMonthIsExcludedInNonMatchingMonth() {
+        val medication = createMedication(
+            intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterWakeUp),
+            courseStartDate = LocalDate(2026, 1, 14),
+            recurrence = MedicationRecurrence.EveryMonthsOnDay(
+                intervalMonths = 3,
+                dayOfMonth = 14,
+            ),
+        )
+
+        val events = generateMedicationIntakeEventsForDate(
+            date = LocalDate(2026, 5, 14),
+            dailySchedule = createDailySchedule(),
+            medications = listOf(medication),
+        )
+
+        assertTrue(events.isEmpty())
+    }
+
+    @Test
+    fun monthlyRecurrenceOnThirtyFirstUsesLastDayOfShortMonth() {
+        val medication = createMedication(
+            intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterWakeUp),
+            courseStartDate = LocalDate(2026, 1, 31),
+            recurrence = MedicationRecurrence.EveryMonthsOnDay(
+                intervalMonths = 1,
+                dayOfMonth = 31,
+            ),
+        )
+
+        val events = generateMedicationIntakeEventsForDate(
+            date = LocalDate(2026, 2, 28),
+            dailySchedule = createDailySchedule(),
+            medications = listOf(medication),
+        )
+
+        assertEquals(1, events.size)
+    }
+
+    @Test
     fun severalTimesPerDayWithSingleOccurrenceUsesWakeUpTime() {
         val medication = createMedication(
             intakeRule = MedicationIntakeRule.SeveralTimesPerDay(
@@ -289,13 +351,15 @@ class GenerateMedicationIntakeEventsForDateUseCaseTest {
         dosageText: String = "1 таблетка",
         intakeRule: MedicationIntakeRule,
         courseStartDate: LocalDate = LocalDate(2020, 1, 1),
-        courseEndDate: LocalDate? = null
+        courseEndDate: LocalDate? = null,
+        recurrence: MedicationRecurrence = MedicationRecurrence.Daily,
     ): Medication = Medication(
         id = medicationId,
         name = medicationName,
         dosageText = dosageText,
         intakeRule = intakeRule,
         courseStartDate = courseStartDate,
-        courseEndDate = courseEndDate
+        courseEndDate = courseEndDate,
+        recurrence = recurrence,
     )
 }

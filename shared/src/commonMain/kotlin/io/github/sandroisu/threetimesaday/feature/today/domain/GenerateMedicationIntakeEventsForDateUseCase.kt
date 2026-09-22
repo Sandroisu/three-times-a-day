@@ -4,6 +4,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -26,8 +27,44 @@ class GenerateMedicationIntakeEventsForDateUseCase {
         val startedInTime = date >= medication.courseStartDate
         val endDate = medication.courseEndDate
         val notFinished = endDate == null || date <= endDate
-        return startedInTime && notFinished
+        return startedInTime && notFinished && matchesRecurrence(medication, date)
     }
+
+    private fun matchesRecurrence(medication: Medication, date: LocalDate): Boolean = when (val recurrence = medication.recurrence) {
+        MedicationRecurrence.Daily -> true
+        is MedicationRecurrence.EveryMonthsOnDay -> matchesMonthlyRecurrence(
+            courseStartDate = medication.courseStartDate,
+            date = date,
+            intervalMonths = recurrence.intervalMonths,
+            dayOfMonth = recurrence.dayOfMonth,
+        )
+    }
+
+    private fun matchesMonthlyRecurrence(
+        courseStartDate: LocalDate,
+        date: LocalDate,
+        intervalMonths: Int,
+        dayOfMonth: Int,
+    ): Boolean {
+        if (intervalMonths <= 0 || dayOfMonth !in MIN_DAY_OF_MONTH..MAX_DAY_OF_MONTH) {
+            return false
+        }
+        val monthsFromStart = (date.year - courseStartDate.year) * MONTHS_IN_YEAR +
+            date.month.ordinal - courseStartDate.month.ordinal
+        if (monthsFromStart < 0 || monthsFromStart % intervalMonths != 0) {
+            return false
+        }
+        return date.day == dayOfMonth.coerceAtMost(daysInMonth(date.year, date.month.ordinal + 1))
+    }
+
+    private fun daysInMonth(year: Int, monthNumber: Int): Int = when (monthNumber) {
+        2 -> if (isLeapYear(year)) LEAP_FEBRUARY_DAYS else FEBRUARY_DAYS
+        4, 6, 9, 11 -> THIRTY_DAY_MONTH_DAYS
+        else -> THIRTY_ONE_DAY_MONTH_DAYS
+    }
+
+    private fun isLeapYear(year: Int): Boolean =
+        year % LEAP_YEAR_DIVISOR == 0 && (year % CENTURY_DIVISOR != 0 || year % QUADRICENTENNIAL_DIVISOR == 0)
 
     private fun eventsForMedication(
         date: LocalDate,
@@ -138,6 +175,16 @@ class GenerateMedicationIntakeEventsForDateUseCase {
         const val BEFORE_SLEEP_OFFSET_MINUTES = 15
         const val SECONDS_IN_MINUTE = 60
         const val SECONDS_IN_DAY = 24 * 60 * 60
+        const val MONTHS_IN_YEAR = 12
+        const val MIN_DAY_OF_MONTH = 1
+        const val MAX_DAY_OF_MONTH = 31
+        const val FEBRUARY_DAYS = 28
+        const val LEAP_FEBRUARY_DAYS = 29
+        const val THIRTY_DAY_MONTH_DAYS = 30
+        const val THIRTY_ONE_DAY_MONTH_DAYS = 31
+        const val LEAP_YEAR_DIVISOR = 4
+        const val CENTURY_DIVISOR = 100
+        const val QUADRICENTENNIAL_DIVISOR = 400
         const val EXACT_TIME_RULE_KEY = "ExactTime"
         const val SEVERAL_TIMES_RULE_KEY = "SeveralTimesPerDay"
     }

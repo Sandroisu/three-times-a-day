@@ -20,5 +20,6 @@ fun previewReminderModule(): Module = module {
     single<MedicationReminderScheduler> { NoOpMedicationReminderScheduler() }
     single<AppSettingsOpener> { object : AppSettingsOpener {
         override fun openAppSettings() = Unit
+        override fun openExactReminderSettings() = Unit
     } }
 }

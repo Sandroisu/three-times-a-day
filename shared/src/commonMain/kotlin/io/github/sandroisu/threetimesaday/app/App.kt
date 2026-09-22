@@ -1,22 +1,23 @@
 package io.github.sandroisu.threetimesaday.app
 
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import io.github.sandroisu.threetimesaday.core.di.commonAppModule
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderLaunchRepository
 import io.github.sandroisu.threetimesaday.core.storage.KeyValueStorage
+import io.github.sandroisu.threetimesaday.core.ui.AppTheme
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationEditorScreen
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationListScreen
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
+import io.github.sandroisu.threetimesaday.feature.today.presentation.MedicationUpcomingIntakes
 import kotlinx.coroutines.launch
 import org.koin.compose.KoinApplication
 import org.koin.compose.koinInject
@@ -37,9 +38,9 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
         single { keyValueStorage }
     }
     KoinApplication(application = { modules(commonAppModule, storageModule, platformModule) }) {
-        MaterialTheme {
-            var currentScreen by remember { mutableStateOf(AppScreen.Today) }
-            var selectedMedicationId by remember { mutableStateOf<String?>(null) }
+        AppTheme {
+            var currentScreen by rememberSaveable { mutableStateOf(AppScreen.Today) }
+            var selectedMedicationId by rememberSaveable { mutableStateOf<String?>(null) }
             val todayViewModel: TodayViewModel = koinViewModel()
             val launchRepository = koinInject<MedicationReminderLaunchRepository>()
             val launchHandlingScope = rememberCoroutineScope()
@@ -86,6 +87,9 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
 
                 AppScreen.MedicationEditor -> MedicationEditorScreen(
                     medicationId = selectedMedicationId,
+                    reminderContent = { medicationId ->
+                        MedicationUpcomingIntakes(medicationId, todayViewModel)
+                    },
                     onBackClick = { currentScreen = AppScreen.MedicationList },
                     onMedicationSaved = {
                         todayViewModel.loadToday()

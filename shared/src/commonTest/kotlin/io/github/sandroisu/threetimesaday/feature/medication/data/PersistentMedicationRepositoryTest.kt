@@ -4,6 +4,7 @@ import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
@@ -43,6 +44,20 @@ class PersistentMedicationRepositoryTest {
 
         assertTrue(restoredMedications.any { it.id == "aspirin" })
         assertEquals(addedMedication, restoredMedications.single { it.id == "aspirin" })
+    }
+
+    @Test
+    fun storedMedicationWithoutRecurrenceUsesDailyRecurrenceForBackwardCompatibility() = runTest {
+        val storage = InMemoryKeyValueStorage()
+        storage.putString(
+            "medications",
+            """[{"id":"aspirin","name":"Аспирин","dosageText":"1 таблетка","intakeRule":{"type":"io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule.AtExactTime","time":"09:30:00"},"courseStartDate":"2026-07-04","courseEndDate":null}]""",
+        )
+        val repository = PersistentMedicationRepository(storage, json)
+
+        val medication = repository.getMedications().single()
+
+        assertEquals(MedicationRecurrence.Daily, medication.recurrence)
     }
 
     @Test

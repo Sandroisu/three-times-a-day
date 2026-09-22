@@ -1,11 +1,19 @@
 package io.github.sandroisu.threetimesaday.feature.medication.presentation
 
+import io.github.sandroisu.threetimesaday.core.time.TimeProvider
+import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
-import io.github.sandroisu.threetimesaday.core.time.TimeProvider
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -14,14 +22,12 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.course_day
+import threetimesaday.shared.generated.resources.medication_daily
+import threetimesaday.shared.generated.resources.moment_after_wake_up
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class MedicationListViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -53,8 +59,9 @@ class MedicationListViewModelTest {
         assertEquals("wake", listItem.id)
         assertEquals("Энтекавир", listItem.name)
         assertEquals("1 таблетка", listItem.dosageText)
-        assertEquals("После пробуждения", listItem.intakeRuleText)
-        assertEquals("День 3", listItem.courseLabel)
+        assertEquals(UiText(Res.string.moment_after_wake_up), listItem.intakeRuleText)
+        assertEquals(UiText(Res.string.medication_daily), listItem.recurrenceText)
+        assertEquals(UiText(Res.string.course_day, listOf(3)), listItem.courseLabel)
         assertFalse(viewModel.uiState.value.isLoading)
     }
 
@@ -80,7 +87,7 @@ class MedicationListViewModelTest {
         advanceUntilIdle()
 
         val uiState = viewModel.uiState.value
-        assertNotNull(uiState.errorMessage)
+        assertEquals(MedicationLabels.listError, uiState.errorMessage)
         assertFalse(uiState.isLoading)
     }
 

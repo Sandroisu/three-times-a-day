@@ -6,6 +6,7 @@ import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderSc
 import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
 import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
+import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
@@ -19,8 +20,16 @@ import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeE
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.RescheduleMedicationRemindersUseCase
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -30,15 +39,10 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotNull
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
+import threetimesaday.shared.generated.resources.Res
+import threetimesaday.shared.generated.resources.intake_taken_at
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class TodayViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
@@ -120,6 +124,23 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun openExactReminderSettingsDelegatesToAppSettingsOpener() = runTest(testDispatcher) {
+        val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val settingsOpener = RecordingAppSettingsOpener()
+        val viewModel = createViewModel(
+            scheduleRepository = scheduleRepository,
+            medicationRepository = medicationRepository,
+            appSettingsOpener = settingsOpener,
+        )
+        advanceUntilIdle()
+
+        viewModel.openExactReminderSettings()
+
+        assertEquals(1, settingsOpener.openExactReminderCount)
+    }
+
+    @Test
     fun successfulLoadProducesEventsInTimeOrder() = runTest(testDispatcher) {
         val scheduleRepository = FakeDailyScheduleRepository(createSchedule())
         val medicationRepository = FakeMedicationRepository(
@@ -172,7 +193,7 @@ class TodayViewModelTest {
         advanceUntilIdle()
 
         val uiState = viewModel.uiState.value
-        assertNotNull(uiState.errorMessage)
+        assertEquals(TodayLabels.loadError, uiState.errorMessage)
         assertFalse(uiState.isLoading)
     }
 
@@ -186,7 +207,7 @@ class TodayViewModelTest {
         advanceUntilIdle()
 
         val uiState = viewModel.uiState.value
-        assertNotNull(uiState.errorMessage)
+        assertEquals(TodayLabels.loadError, uiState.errorMessage)
         assertFalse(uiState.isLoading)
     }
 
@@ -215,6 +236,10 @@ class TodayViewModelTest {
         advanceUntilIdle()
 
         assertEquals(MedicationIntakeStatus.Taken, viewModel.uiState.value.intakeEvents.single().status)
+        assertEquals(1, viewModel.uiState.value.takenCount)
+        assertEquals(1f, viewModel.uiState.value.completionFraction)
+        assertEquals(UiText(Res.string.intake_taken_at, listOf("08:05")), viewModel.uiState.value.intakeGroups.single().intakes.single().statusLabel)
+        assertEquals(LocalDate(2026, 7, 4), viewModel.uiState.value.upcomingIntakes.single().scheduledDateTime.date)
     }
 
     @Test
@@ -431,7 +456,7 @@ class TodayViewModelTest {
         advanceUntilIdle()
 
         assertEquals(MedicationIntakeStatus.Taken, recordRepository.currentRecords().single().status)
-        assertNotNull(viewModel.uiState.value.notificationErrorMessage)
+        assertEquals(TodayLabels.notificationError, viewModel.uiState.value.notificationErrorMessage)
     }
 
     @Test
@@ -452,7 +477,7 @@ class TodayViewModelTest {
 
         val uiState = viewModel.uiState.value
         assertTrue(uiState.intakeEvents.isNotEmpty())
-        assertNotNull(uiState.notificationErrorMessage)
+        assertEquals(TodayLabels.notificationError, uiState.notificationErrorMessage)
     }
 
     @Test
@@ -499,14 +524,66 @@ class TodayViewModelTest {
         postponedDateTime = null
     )
 
+    @Test
+    fun displayClockUpdatesDueStateWithoutReschedulingReminders() = runTest(testDispatcher) {
+        val clock = MutableTimeProvider(LocalDateTime(testDate, LocalTime(7, 59)))
+        val scheduler = FakeMedicationReminderScheduler()
+        val viewModel = createViewModel(
+            FakeDailyScheduleRepository(createSchedule()),
+            FakeMedicationRepository(listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))),
+            reminderScheduler = scheduler,
+            timeProvider = clock,
+        )
+        advanceUntilIdle()
+        val scheduledCount = scheduler.cancelAllCount
+        assertEquals(IntakeDisplayStatus.Upcoming, viewModel.uiState.value.intakeGroups.single().intakes.single().status)
+
+        clock.dateTime = LocalDateTime(testDate, LocalTime(8, 0))
+        viewModel.refreshDisplayedTime()
+        assertEquals(IntakeDisplayStatus.Due, viewModel.uiState.value.intakeGroups.single().intakes.single().status)
+        assertEquals(scheduledCount, scheduler.cancelAllCount)
+
+        clock.dateTime = LocalDateTime(testDate, LocalTime(8, 1))
+        viewModel.refreshDisplayedTime()
+        assertEquals(IntakeDisplayStatus.Overdue, viewModel.uiState.value.intakeGroups.single().intakes.single().status)
+        assertEquals(scheduledCount, scheduler.cancelAllCount)
+    }
+
+    @Test
+    fun backwardClockChangeRestoresUpcomingIntakesAndMidnightLoadsNewDate() = runTest(testDispatcher) {
+        val clock = MutableTimeProvider(LocalDateTime(testDate, LocalTime(9, 0)))
+        val viewModel = createViewModel(
+            FakeDailyScheduleRepository(createSchedule()),
+            FakeMedicationRepository(listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp))),
+            timeProvider = clock,
+        )
+        advanceUntilIdle()
+        assertEquals(1, viewModel.uiState.value.upcomingIntakes.size)
+
+        clock.dateTime = LocalDateTime(testDate, LocalTime(7, 0))
+        viewModel.refreshDisplayedTime()
+        advanceUntilIdle()
+        assertEquals(2, viewModel.uiState.value.upcomingIntakes.size)
+
+        clock.dateTime = LocalDateTime(2026, 7, 4, 0, 0)
+        viewModel.refreshDisplayedTime()
+        advanceUntilIdle()
+        assertEquals(LocalDate(2026, 7, 4), viewModel.uiState.value.intakeEvents.single().scheduledDateTime.date)
+    }
+
+    private class MutableTimeProvider(var dateTime: LocalDateTime) : TimeProvider {
+        override fun currentDate(): LocalDate = dateTime.date
+        override fun currentDateTime(): LocalDateTime = dateTime
+    }
+
     private fun createViewModel(
         scheduleRepository: DailyScheduleRepository,
         medicationRepository: MedicationRepository,
         recordRepository: MedicationIntakeRecordRepository = FakeMedicationIntakeRecordRepository(),
         reminderScheduler: MedicationReminderScheduler = FakeMedicationReminderScheduler(),
-        appSettingsOpener: AppSettingsOpener = RecordingAppSettingsOpener()
+        appSettingsOpener: AppSettingsOpener = RecordingAppSettingsOpener(),
+        timeProvider: TimeProvider = FakeTimeProvider(testDate),
     ): TodayViewModel {
-        val timeProvider = FakeTimeProvider(testDate)
         val generateEvents = GenerateMedicationIntakeEventsForDateUseCase()
         val applyRecords = ApplyMedicationIntakeRecordsUseCase()
         val rescheduleReminders = RescheduleMedicationRemindersUseCase(
@@ -679,9 +756,14 @@ class TodayViewModelTest {
     private class RecordingAppSettingsOpener : AppSettingsOpener {
 
         var openCount = 0
+        var openExactReminderCount = 0
 
         override fun openAppSettings() {
             openCount++
+        }
+
+        override fun openExactReminderSettings() {
+            openExactReminderCount++
         }
     }
 }
