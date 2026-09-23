@@ -13,4 +13,8 @@ interface MedicationReminderScheduler {
     suspend fun cancelReminder(notificationId: String)
 
     suspend fun cancelAllReminders()
+
+    suspend fun cancelRemindersWithPrefix(notificationIdPrefix: String) {
+        cancelAllReminders()
+    }
 }

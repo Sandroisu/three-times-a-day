@@ -56,13 +56,11 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
         val content = UNMutableNotificationContent()
         content.setTitle(notification.title)
         content.setBody(notification.message)
-        val eventId = notification.notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX)
-        content.setUserInfo(
-            mapOf<Any?, Any?>(
-                NOTIFICATION_USER_INFO_ID_KEY to notification.notificationId,
-                NOTIFICATION_USER_INFO_EVENT_ID_KEY to eventId
-            )
-        )
+        val userInfo = mutableMapOf<Any?, Any?>(NOTIFICATION_USER_INFO_ID_KEY to notification.notificationId)
+        if (notification.notificationId.startsWith(MEDICATION_REMINDER_ID_PREFIX)) {
+            userInfo[NOTIFICATION_USER_INFO_EVENT_ID_KEY] = notification.notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX)
+        }
+        content.setUserInfo(userInfo)
         val dateComponents = NSDateComponents().apply {
             year = notification.scheduledDateTime.year.toLong()
             month = (notification.scheduledDateTime.month.ordinal + 1).toLong()
@@ -91,11 +89,16 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
     }
 
     override suspend fun cancelAllReminders() {
+        cancelRemindersWithPrefix(MEDICATION_REMINDER_ID_PREFIX)
+        cancelRemindersWithPrefix(REMINDER_NOTIFICATION_ID_PREFIX)
+    }
+
+    override suspend fun cancelRemindersWithPrefix(notificationIdPrefix: String) {
         suspendCancellableCoroutine { continuation ->
             notificationCenter.getPendingNotificationRequestsWithCompletionHandler { requests ->
                 val identifiers = requests.orEmpty()
                     .mapNotNull { pendingRequest -> (pendingRequest as? UNNotificationRequest)?.identifier }
-                    .filter { identifier -> identifier.startsWith(MEDICATION_REMINDER_ID_PREFIX) }
+                    .filter { identifier -> identifier.startsWith(notificationIdPrefix) }
                 if (identifiers.isNotEmpty()) {
                     notificationCenter.removePendingNotificationRequestsWithIdentifiers(identifiers)
                     notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)

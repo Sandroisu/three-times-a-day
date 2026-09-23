@@ -19,8 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import io.github.sandroisu.threetimesaday.core.ui.AppIcons
 import io.github.sandroisu.threetimesaday.core.ui.AppSpacing
-import io.github.sandroisu.threetimesaday.core.ui.IntakeColors
 import io.github.sandroisu.threetimesaday.core.ui.PrimaryActionButton
+import io.github.sandroisu.threetimesaday.core.ui.semanticColors
 
 @Composable
 internal fun MedicationIntakeCard(
@@ -33,7 +33,11 @@ internal fun MedicationIntakeCard(
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        color = if (intake.status == IntakeDisplayStatus.Taken) IntakeColors.successContainer else MaterialTheme.colorScheme.surface,
+        color = if (intake.status == IntakeDisplayStatus.Taken) {
+            MaterialTheme.semanticColors.successContainer
+        } else {
+            MaterialTheme.colorScheme.surface
+        },
         border = if (isHighlighted) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
     ) {
         Column(Modifier.padding(AppSpacing.standard), verticalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
@@ -62,11 +66,17 @@ private fun MedicationStatusIndicator(
     status: IntakeDisplayStatus,
     label: String,
 ) {
-    val foreground = when (status) {
-        IntakeDisplayStatus.Taken -> IntakeColors.success
+    val iconTint = when (status) {
+        IntakeDisplayStatus.Taken -> MaterialTheme.semanticColors.success
         IntakeDisplayStatus.Overdue -> MaterialTheme.colorScheme.error
         IntakeDisplayStatus.Due -> MaterialTheme.colorScheme.primary
-        IntakeDisplayStatus.Upcoming, IntakeDisplayStatus.Skipped -> MaterialTheme.colorScheme.onSurfaceVariant
+        IntakeDisplayStatus.Upcoming -> MaterialTheme.semanticColors.attention
+        IntakeDisplayStatus.Skipped -> MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val labelColor = if (status == IntakeDisplayStatus.Upcoming) {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    } else {
+        iconTint
     }
     val icon = when (status) {
         IntakeDisplayStatus.Taken -> AppIcons.Check
@@ -74,7 +84,7 @@ private fun MedicationStatusIndicator(
         IntakeDisplayStatus.Upcoming, IntakeDisplayStatus.Due, IntakeDisplayStatus.Skipped -> AppIcons.Clock
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
-        Icon(icon, contentDescription = null, tint = foreground, modifier = Modifier.size(16.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge, color = foreground)
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(16.dp))
+        Text(label, style = MaterialTheme.typography.labelLarge, color = labelColor)
     }
 }

@@ -7,7 +7,11 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -25,10 +29,25 @@ internal object AppSpacing {
     val large = 32.dp
 }
 
-internal object IntakeColors {
-    val success = Color(0xFF326453)
-    val successContainer = Color(0xFFEAF2ED)
-}
+@Immutable
+internal data class AppSemanticColors(
+    val success: Color,
+    val successContainer: Color,
+    val attention: Color,
+)
+
+private val lightAppSemanticColors = AppSemanticColors(
+    success = Color(0xFF326453),
+    successContainer = Color(0xFFEAF2ED),
+    attention = Color(0xFFE9A23B),
+)
+
+private val LocalAppSemanticColors = staticCompositionLocalOf { lightAppSemanticColors }
+
+internal val MaterialTheme.semanticColors: AppSemanticColors
+    @Composable
+    @ReadOnlyComposable
+    get() = LocalAppSemanticColors.current
 
 private val appColors = lightColorScheme(
     primary = Color(0xFF246B68),
@@ -86,19 +105,21 @@ private val appTypography = Typography(
 
 @Composable
 internal fun AppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = appColors,
-        typography = appTypography,
-        shapes = Shapes(
-            extraSmall = RoundedCornerShape(8.dp),
-            small = RoundedCornerShape(12.dp),
-            medium = RoundedCornerShape(16.dp),
-            large = RoundedCornerShape(16.dp),
-            extraLarge = RoundedCornerShape(24.dp),
-        ),
-    ) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            content()
+    CompositionLocalProvider(LocalAppSemanticColors provides lightAppSemanticColors) {
+        MaterialTheme(
+            colorScheme = appColors,
+            typography = appTypography,
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(8.dp),
+                small = RoundedCornerShape(12.dp),
+                medium = RoundedCornerShape(16.dp),
+                large = RoundedCornerShape(16.dp),
+                extraLarge = RoundedCornerShape(24.dp),
+            ),
+        ) {
+            Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                content()
+            }
         }
     }
 }
