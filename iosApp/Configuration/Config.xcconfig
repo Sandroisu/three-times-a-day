@@ -1,6 +1,6 @@
 TEAM_ID=
 
-PRODUCT_NAME=ThreeTimesADay
+PRODUCT_NAME=Remindly
 PRODUCT_BUNDLE_IDENTIFIER=io.github.sandroisu.threetimesaday.ThreeTimesADay$(TEAM_ID)
 
 CURRENT_PROJECT_VERSION=1
