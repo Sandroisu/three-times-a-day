@@ -52,7 +52,7 @@ class MedicationReminderReceiver : BroadcastReceiver() {
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    context.getString(R.string.medication_reminder_channel),
+                    context.getString(R.string.reminder_channel),
                     NotificationManager.IMPORTANCE_HIGH,
                 )
             )
@@ -89,11 +89,12 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         val launchIntent = context.packageManager
             .getLaunchIntentForPackage(context.packageName)
             ?: return null
-        val eventId = notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX)
         launchIntent.apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP
-            putExtra(LAUNCH_EXTRA_NOTIFICATION_ID, notificationId)
-            putExtra(LAUNCH_EXTRA_EVENT_ID, eventId)
+            if (notificationId.startsWith(MEDICATION_REMINDER_ID_PREFIX)) {
+                putExtra(LAUNCH_EXTRA_NOTIFICATION_ID, notificationId)
+                putExtra(LAUNCH_EXTRA_EVENT_ID, notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX))
+            }
         }
         return PendingIntent.getActivity(
             context,
@@ -107,12 +108,21 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                AndroidMedicationReminderRescheduler.reschedule(
-                    context = context.applicationContext,
-                    deliveredNotificationId = notificationId,
-                )
+                when {
+                    notificationId.startsWith(MEDICATION_REMINDER_ID_PREFIX) ->
+                        AndroidMedicationReminderRescheduler.reschedule(
+                            context = context.applicationContext,
+                            deliveredNotificationId = notificationId,
+                        )
+
+                    notificationId.startsWith(REMINDER_NOTIFICATION_ID_PREFIX) ->
+                        AndroidReminderRescheduler.reschedule(
+                            context = context.applicationContext,
+                            deliveredNotificationId = notificationId,
+                        )
+                }
             } catch (rescheduleFailure: Exception) {
-                Log.e(LOG_TAG, "Could not schedule following medication reminder", rescheduleFailure)
+                Log.e(LOG_TAG, "Could not schedule following reminder", rescheduleFailure)
             } finally {
                 pendingResult.finish()
             }

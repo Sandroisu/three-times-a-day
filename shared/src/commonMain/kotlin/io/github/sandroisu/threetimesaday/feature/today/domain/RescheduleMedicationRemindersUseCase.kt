@@ -30,7 +30,7 @@ class RescheduleMedicationRemindersUseCase(
         val dailySchedule = dailyScheduleRepository.getDailySchedule()
         val medications = medicationRepository.getMedications()
         if (replaceExistingReminders) {
-            medicationReminderScheduler.cancelAllReminders()
+            medicationReminderScheduler.cancelRemindersWithPrefix(MEDICATION_REMINDER_ID_PREFIX)
         }
         val nextScheduledDateTime = findNextScheduledDateTime(
             currentDateTime = currentDateTime,

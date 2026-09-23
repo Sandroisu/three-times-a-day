@@ -23,8 +23,9 @@ class MedicationReminderBootReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.Default).launch {
             try {
                 AndroidMedicationReminderRescheduler.reschedule(applicationContext)
+                AndroidReminderRescheduler.reschedule(applicationContext)
             } catch (rescheduleFailure: Exception) {
-                Log.e(LOG_TAG, "Could not restore medication reminders", rescheduleFailure)
+                Log.e(LOG_TAG, "Could not restore reminders", rescheduleFailure)
             } finally {
                 pendingResult.finish()
             }

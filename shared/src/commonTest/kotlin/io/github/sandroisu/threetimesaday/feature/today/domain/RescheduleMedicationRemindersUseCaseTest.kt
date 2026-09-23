@@ -133,7 +133,7 @@ class RescheduleMedicationRemindersUseCaseTest {
     }
 
     @Test
-    fun cancelsAllRemindersBeforeScheduling() = runTest {
+    fun cancelsOnlyMedicationRemindersBeforeScheduling() = runTest {
         val scheduler = FakeScheduler()
         val useCase = createUseCase(
             medications = listOf(exactTimeMedication("vitamin", LocalTime(18, 0), courseEndDate = testDate)),
@@ -142,8 +142,8 @@ class RescheduleMedicationRemindersUseCaseTest {
 
         useCase()
 
-        assertEquals(1, scheduler.cancelAllCount)
-        assertEquals(CANCEL_ALL_OPERATION, scheduler.operations.first())
+        assertEquals(listOf(MEDICATION_REMINDER_ID_PREFIX), scheduler.cancelledPrefixes)
+        assertEquals(CANCEL_MEDICATION_OPERATION, scheduler.operations.first())
         assertTrue(scheduler.operations.count { operation -> operation == SCHEDULE_OPERATION } >= 1)
     }
 
@@ -157,7 +157,7 @@ class RescheduleMedicationRemindersUseCaseTest {
 
         useCase(replaceExistingReminders = false)
 
-        assertEquals(0, scheduler.cancelAllCount)
+        assertTrue(scheduler.cancelledPrefixes.isEmpty())
         assertEquals(1, scheduler.scheduledNotifications.size)
     }
 
@@ -274,7 +274,7 @@ class RescheduleMedicationRemindersUseCaseTest {
     private class FakeScheduler : MedicationReminderScheduler {
         val scheduledNotifications: MutableList<MedicationReminderNotification> = mutableListOf()
         val operations: MutableList<String> = mutableListOf()
-        var cancelAllCount = 0
+        val cancelledPrefixes: MutableList<String> = mutableListOf()
         var scheduleError: Throwable? = null
 
         override suspend fun getPermissionStatus(): NotificationPermissionStatus =
@@ -293,12 +293,17 @@ class RescheduleMedicationRemindersUseCaseTest {
 
         override suspend fun cancelAllReminders() {
             operations.add(CANCEL_ALL_OPERATION)
-            cancelAllCount++
+        }
+
+        override suspend fun cancelRemindersWithPrefix(notificationIdPrefix: String) {
+            operations.add(CANCEL_MEDICATION_OPERATION)
+            cancelledPrefixes.add(notificationIdPrefix)
         }
     }
 
     private companion object {
         const val CANCEL_ALL_OPERATION = "cancelAll"
+        const val CANCEL_MEDICATION_OPERATION = "cancelMedication"
         const val SCHEDULE_OPERATION = "schedule"
     }
 }

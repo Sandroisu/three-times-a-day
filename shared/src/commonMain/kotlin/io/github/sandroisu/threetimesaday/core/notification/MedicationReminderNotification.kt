@@ -3,6 +3,7 @@ package io.github.sandroisu.threetimesaday.core.notification
 import kotlinx.datetime.LocalDateTime
 
 const val MEDICATION_REMINDER_ID_PREFIX = "medication-reminder|"
+const val REMINDER_NOTIFICATION_ID_PREFIX = "reminder|"
 
 data class MedicationReminderNotification(
     val notificationId: String,

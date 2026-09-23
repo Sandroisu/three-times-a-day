@@ -13,6 +13,15 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationId
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationEditorViewModel
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.MedicationListViewModel
+import io.github.sandroisu.threetimesaday.feature.reminder.data.PersistentReminderIdGenerator
+import io.github.sandroisu.threetimesaday.feature.reminder.data.PersistentReminderRepository
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.FindNextReminderDateTimeUseCase
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderIdGenerator
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRepository
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.RescheduleRemindersUseCase
+import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderEditorViewModel
+import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderLabels
+import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListViewModel
 import io.github.sandroisu.threetimesaday.feature.schedule.data.PersistentDailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorViewModel
@@ -41,9 +50,12 @@ val commonAppModule = module {
     single<DailyScheduleRepository> { PersistentDailyScheduleRepository(get(), get()) }
     single<MedicationRepository> { PersistentMedicationRepository(get(), get()) }
     single<MedicationIdGenerator> { IncrementingMedicationIdGenerator() }
+    single<ReminderRepository> { PersistentReminderRepository(get(), get()) }
+    single<ReminderIdGenerator> { PersistentReminderIdGenerator(get()) }
     single<MedicationIntakeRecordRepository> { PersistentMedicationIntakeRecordRepository(get(), get()) }
     single { GenerateMedicationIntakeEventsForDateUseCase() }
     single { ApplyMedicationIntakeRecordsUseCase() }
+    single { FindNextReminderDateTimeUseCase() }
     single {
         RescheduleMedicationRemindersUseCase(
             dailyScheduleRepository = get(),
@@ -58,8 +70,19 @@ val commonAppModule = module {
             }
         )
     }
+    single {
+        RescheduleRemindersUseCase(
+            reminderRepository = get(),
+            findNextReminderDateTime = get(),
+            medicationReminderScheduler = get(),
+            timeProvider = get(),
+            buildReminderMessage = { ReminderLabels.notificationMessage.resolve() },
+        )
+    }
     viewModelOf(::TodayViewModel)
     viewModelOf(::ScheduleEditorViewModel)
     viewModelOf(::MedicationListViewModel)
     viewModelOf(::MedicationEditorViewModel)
+    viewModelOf(::ReminderListViewModel)
+    viewModelOf(::ReminderEditorViewModel)
 }

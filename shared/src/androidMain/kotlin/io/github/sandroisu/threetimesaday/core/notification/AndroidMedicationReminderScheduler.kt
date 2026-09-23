@@ -91,6 +91,15 @@ class AndroidMedicationReminderScheduler(
         reminderRegistry.clear()
     }
 
+    override suspend fun cancelRemindersWithPrefix(notificationIdPrefix: String) {
+        reminderRegistry.getReminderIds()
+            .filter { notificationId -> notificationId.startsWith(notificationIdPrefix) }
+            .forEach { notificationId ->
+                runCatching { cancelSystemReminder(notificationId) }
+                reminderRegistry.removeReminderId(notificationId)
+            }
+    }
+
     private fun cancelSystemReminder(notificationId: String) {
         val requestCode = reminderRequestCode(notificationId)
         val alarmManager = context.getSystemService(AlarmManager::class.java)
@@ -136,7 +145,7 @@ class AndroidMedicationReminderScheduler(
             notificationManager.createNotificationChannel(
                 NotificationChannel(
                     MedicationReminderReceiver.CHANNEL_ID,
-                    context.getString(R.string.medication_reminder_channel),
+                    context.getString(R.string.reminder_channel),
                     NotificationManager.IMPORTANCE_HIGH,
                 )
             )
