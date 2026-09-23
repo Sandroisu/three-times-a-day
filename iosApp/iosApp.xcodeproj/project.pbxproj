@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		15763A76F0601CA518E5CA4A /* ThreeTimesADay.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ThreeTimesADay.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		15763A76F0601CA518E5CA4A /* Remindly.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Remindly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -59,7 +59,7 @@
 		B760A988D5AEC0A08178C19E /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				15763A76F0601CA518E5CA4A /* ThreeTimesADay.app */,
+				15763A76F0601CA518E5CA4A /* Remindly.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -87,7 +87,7 @@
 			packageProductDependencies = (
 			);
 			productName = iosApp;
-			productReference = 15763A76F0601CA518E5CA4A /* ThreeTimesADay.app */;
+			productReference = 15763A76F0601CA518E5CA4A /* Remindly.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
