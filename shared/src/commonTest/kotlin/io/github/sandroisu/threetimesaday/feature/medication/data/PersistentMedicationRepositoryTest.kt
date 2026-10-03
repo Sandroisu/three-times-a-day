@@ -18,13 +18,12 @@ class PersistentMedicationRepositoryTest {
     private val json = Json { ignoreUnknownKeys = true }
 
     @Test
-    fun returnsSeedMedicationsWhenNothingStored() = runTest {
+    fun returnsEmptyListWhenNothingStored() = runTest {
         val repository = PersistentMedicationRepository(InMemoryKeyValueStorage(), json)
 
         val medications = repository.getMedications()
 
-        assertEquals(3, medications.size)
-        assertTrue(medications.any { it.id == "entecavir" })
+        assertTrue(medications.isEmpty())
     }
 
     @Test
@@ -61,15 +60,45 @@ class PersistentMedicationRepositoryTest {
     }
 
     @Test
-    fun deletingAllMedicationsPersistsEmptyListWithoutReseeding() = runTest {
+    fun deletingAllMedicationsPersistsEmptyList() = runTest {
         val storage = InMemoryKeyValueStorage()
         val repository = PersistentMedicationRepository(storage, json)
-        val seedMedications = repository.getMedications()
-        seedMedications.forEach { repository.deleteMedication(it.id) }
+        repository.saveMedication(
+            Medication(
+                id = "aspirin",
+                name = "Аспирин",
+                dosageText = "1 таблетка",
+                intakeRule = MedicationIntakeRule.AtExactTime(LocalTime(9, 30)),
+                courseStartDate = LocalDate(2026, 7, 4),
+                courseEndDate = null,
+            )
+        )
+        repository.deleteMedication("aspirin")
 
         val restoredMedications = PersistentMedicationRepository(storage, json).getMedications()
 
         assertTrue(restoredMedications.isEmpty())
+    }
+
+    @Test
+    fun removesUnchangedLegacyDemoMedicationsButPreservesEditedOnes() = runTest {
+        val storage = InMemoryKeyValueStorage()
+        val legacyStartDate = LocalDate(2025, 1, 1)
+        val legacyDemo = Medication(
+            id = "entecavir",
+            name = "Энтекавир",
+            dosageText = "1 таблетка",
+            intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterWakeUp),
+            courseStartDate = legacyStartDate,
+            courseEndDate = null,
+        )
+        val editedDemo = legacyDemo.copy(id = "magnesium", name = "Мой магний")
+        storage.putString("medications", json.encodeToString(listOf(legacyDemo, editedDemo)))
+
+        val medications = PersistentMedicationRepository(storage, json).getMedications()
+
+        assertEquals(listOf(editedDemo), medications)
+        assertEquals(listOf(editedDemo), json.decodeFromString<List<Medication>>(storage.getString("medications").orEmpty()))
     }
 
     @Test

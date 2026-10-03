@@ -15,6 +15,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -23,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionAction
+import io.github.sandroisu.threetimesaday.core.notification.notificationPermissionPrompt
 import io.github.sandroisu.threetimesaday.core.ui.AppIcons
 import io.github.sandroisu.threetimesaday.core.ui.AppSpacing
 import io.github.sandroisu.threetimesaday.core.ui.LoadingIndicator
@@ -39,6 +42,7 @@ internal fun ReminderListScreen(
     reminderListViewModel: ReminderListViewModel = koinViewModel(),
 ) {
     val uiState by reminderListViewModel.uiState.collectAsStateWithLifecycle()
+    val permissionPrompt = notificationPermissionPrompt(uiState.notificationPermissionStatus)
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { reminderListViewModel.loadReminders() }
     Column(Modifier.fillMaxSize().safeDrawingPadding()) {
         LazyColumn(
@@ -48,6 +52,34 @@ internal fun ReminderListScreen(
         ) {
             item {
                 ScreenHeader(ReminderLabels.reminders.asString(), subtitle = ReminderLabels.listSubtitle.asString())
+            }
+            if (permissionPrompt != null) {
+                item(key = "notification-permission") {
+                    Notice(permissionPrompt.message.asString()) {
+                        TextButton(
+                            onClick = when (permissionPrompt.action) {
+                                NotificationPermissionAction.Request -> reminderListViewModel::requestNotificationPermission
+                                NotificationPermissionAction.OpenSettings -> reminderListViewModel::openNotificationSettings
+                            }
+                        ) {
+                            Text(permissionPrompt.actionLabel.asString())
+                        }
+                    }
+                }
+            }
+            if (!uiState.exactRemindersAllowed) {
+                item(key = "exact-reminders") {
+                    Notice(ReminderLabels.exactReminders.asString(), isError = true) {
+                        TextButton(onClick = reminderListViewModel::openExactReminderSettings) {
+                            Text(ReminderLabels.exactRemindersAction.asString())
+                        }
+                    }
+                }
+            }
+            uiState.notificationErrorMessage?.let { notificationError ->
+                item(key = "notification-error") {
+                    Notice(notificationError.asString(), isError = true)
+                }
             }
             when {
                 uiState.isLoading -> item { LoadingIndicator() }

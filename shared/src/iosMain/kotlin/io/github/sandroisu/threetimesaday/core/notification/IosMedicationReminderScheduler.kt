@@ -1,6 +1,8 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import platform.Foundation.NSDateComponents
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
@@ -13,13 +15,17 @@ import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
 import platform.UserNotifications.UNNotificationRequest
+import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNUserNotificationCenter
 import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 const val NOTIFICATION_USER_INFO_ID_KEY = "notificationId"
 const val NOTIFICATION_USER_INFO_EVENT_ID_KEY = "eventId"
 
-class IosMedicationReminderScheduler : MedicationReminderScheduler {
+class IosMedicationReminderScheduler(
+    private val alarmBridge: IosAlarmBridge? = null,
+) : MedicationReminderScheduler {
 
     private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
 
@@ -42,7 +48,11 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
     override suspend fun requestPermission(): NotificationPermissionStatus =
         suspendCancellableCoroutine { continuation ->
             val options = UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
-            notificationCenter.requestAuthorizationWithOptions(options) { isGranted, _ ->
+            notificationCenter.requestAuthorizationWithOptions(options) { isGranted, error ->
+                if (error != null) {
+                    continuation.resumeWithException(IllegalStateException(error.localizedDescription))
+                    return@requestAuthorizationWithOptions
+                }
                 val status = if (isGranted) {
                     NotificationPermissionStatus.Granted
                 } else {
@@ -53,9 +63,21 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
         }
 
     override suspend fun scheduleReminder(notification: MedicationReminderNotification) {
+        if (notification.deliveryMode is NotificationDeliveryMode.Alarm && alarmBridge != null) {
+            alarmBridge.scheduleAlarm(
+                notificationId = notification.notificationId,
+                title = notification.title,
+                message = notification.message,
+                triggerAtEpochMilliseconds = notification.scheduledDateTime
+                    .toInstant(TimeZone.currentSystemDefault())
+                    .toEpochMilliseconds(),
+            )
+            return
+        }
         val content = UNMutableNotificationContent()
         content.setTitle(notification.title)
         content.setBody(notification.message)
+        content.setSound(UNNotificationSound.defaultSound)
         val userInfo = mutableMapOf<Any?, Any?>(NOTIFICATION_USER_INFO_ID_KEY to notification.notificationId)
         if (notification.notificationId.startsWith(MEDICATION_REMINDER_ID_PREFIX)) {
             userInfo[NOTIFICATION_USER_INFO_EVENT_ID_KEY] = notification.notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX)
@@ -76,13 +98,18 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
             trigger
         )
         suspendCancellableCoroutine { continuation ->
-            notificationCenter.addNotificationRequest(request) { _ ->
-                continuation.resume(Unit)
+            notificationCenter.addNotificationRequest(request) { error ->
+                if (error == null) {
+                    continuation.resume(Unit)
+                } else {
+                    continuation.resumeWithException(IllegalStateException(error.localizedDescription))
+                }
             }
         }
     }
 
     override suspend fun cancelReminder(notificationId: String) {
+        alarmBridge?.cancelAlarm(notificationId)
         val identifiers = listOf(notificationId)
         notificationCenter.removePendingNotificationRequestsWithIdentifiers(identifiers)
         notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)
@@ -94,6 +121,7 @@ class IosMedicationReminderScheduler : MedicationReminderScheduler {
     }
 
     override suspend fun cancelRemindersWithPrefix(notificationIdPrefix: String) {
+        alarmBridge?.cancelAlarmsWithPrefix(notificationIdPrefix)
         suspendCancellableCoroutine { continuation ->
             notificationCenter.getPendingNotificationRequestsWithCompletionHandler { requests ->
                 val identifiers = requests.orEmpty()

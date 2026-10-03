@@ -30,6 +30,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.presentation.Medica
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderEditorScreen
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderLabels
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListScreen
+import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListViewModel
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.MedicationUpcomingIntakes
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayLabels
@@ -64,10 +65,12 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
             val todayViewModel: TodayViewModel = koinViewModel()
+            val reminderListViewModel: ReminderListViewModel = koinViewModel()
             val launchRepository = koinInject<MedicationReminderLaunchRepository>()
             val launchHandlingScope = rememberCoroutineScope()
 
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+                reminderListViewModel.loadReminders()
                 launchHandlingScope.launch {
                     val launchData = launchRepository.consumeLaunchData()
                     if (launchData != null) {
@@ -159,6 +162,7 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                             ReminderListScreen(
                                 onAddReminderClick = { navController.navigate(AppDestination.NewReminder) },
                                 onReminderClick = { reminderId -> navController.navigate("reminder/$reminderId") },
+                                reminderListViewModel = reminderListViewModel,
                             )
                         }
                         composable(AppDestination.NewReminder) {

@@ -4,6 +4,7 @@ import io.github.sandroisu.threetimesaday.core.notification.REMINDER_NOTIFICATIO
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderNotification
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderScheduler
 import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
+import io.github.sandroisu.threetimesaday.core.notification.NotificationDeliveryMode
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -38,13 +39,38 @@ class RescheduleRemindersUseCaseTest {
         assertEquals(listOf(REMINDER_NOTIFICATION_ID_PREFIX), scheduler.cancelledPrefixes)
         assertEquals(
             MedicationReminderNotification(
-                notificationId = REMINDER_NOTIFICATION_ID_PREFIX + "taxes",
+                notificationId = REMINDER_NOTIFICATION_ID_PREFIX + "taxes|2026-04-14T09:00",
                 title = "Pay taxes",
                 message = "Reminder",
                 scheduledDateTime = LocalDateTime(LocalDate(2026, 4, 14), LocalTime(9, 0)),
             ),
-            scheduler.scheduledNotifications.single(),
+            scheduler.scheduledNotifications.first(),
         )
+        assertEquals(32, scheduler.scheduledNotifications.size)
+    }
+
+    @Test
+    fun schedulesAlarmModeWithTenMinuteSafetyLimit() = runTest {
+        val scheduler = FakeScheduler()
+        val reminder = Reminder(
+            id = "wake-up",
+            title = "Wake up",
+            date = LocalDate(2026, 1, 16),
+            time = LocalTime(7, 0),
+            recurrence = ReminderRecurrence.Once,
+            alertMode = ReminderAlertMode.Alarm,
+        )
+        val useCase = RescheduleRemindersUseCase(
+            reminderRepository = FakeReminderRepository(listOf(reminder)),
+            findNextReminderDateTime = FindNextReminderDateTimeUseCase(),
+            medicationReminderScheduler = scheduler,
+            timeProvider = FakeTimeProvider(LocalDateTime(LocalDate(2026, 1, 15), LocalTime(12, 0))),
+            buildReminderMessage = { "Reminder" },
+        )
+
+        useCase()
+
+        assertEquals(NotificationDeliveryMode.Alarm(10), scheduler.scheduledNotifications.single().deliveryMode)
     }
 
     @Test

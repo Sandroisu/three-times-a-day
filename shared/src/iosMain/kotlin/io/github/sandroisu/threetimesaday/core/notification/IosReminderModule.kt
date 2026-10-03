@@ -5,7 +5,7 @@ import io.github.sandroisu.threetimesaday.core.settings.IosAppSettingsOpener
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
-fun iosReminderModule(): Module = module {
-    single<MedicationReminderScheduler> { IosMedicationReminderScheduler() }
+fun iosReminderModule(alarmBridge: IosAlarmBridge? = null): Module = module {
+    single<MedicationReminderScheduler> { IosMedicationReminderScheduler(alarmBridge) }
     single<AppSettingsOpener> { IosAppSettingsOpener() }
 }

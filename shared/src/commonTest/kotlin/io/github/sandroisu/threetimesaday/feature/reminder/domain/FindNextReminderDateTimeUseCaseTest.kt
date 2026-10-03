@@ -53,11 +53,55 @@ class FindNextReminderDateTimeUseCaseTest {
         assertNull(nextDateTime)
     }
 
+    @Test
+    fun findsNextDailyOccurrence() {
+        val reminder = reminder(ReminderRecurrence.Daily)
+
+        val nextDateTime = useCase(reminder, LocalDateTime(LocalDate(2026, 1, 2), LocalTime(9, 0)))
+
+        assertEquals(LocalDateTime(LocalDate(2026, 1, 3), LocalTime(9, 0)), nextDateTime)
+    }
+
+    @Test
+    fun findsNextSelectedWeekday() {
+        val reminder = reminder(ReminderRecurrence.OnWeekdays(listOf(ReminderWeekday.Thursday)))
+
+        val nextDateTime = useCase(reminder, LocalDateTime(LocalDate(2026, 1, 1), LocalTime(9, 0)))
+
+        assertEquals(LocalDateTime(LocalDate(2026, 1, 8), LocalTime(9, 0)), nextDateTime)
+    }
+
+    @Test
+    fun findsNextOccurrenceEveryTwoDays() {
+        val reminder = reminder(ReminderRecurrence.EveryDays(intervalDays = 2))
+
+        val nextDateTime = useCase(reminder, LocalDateTime(LocalDate(2026, 1, 2), LocalTime(12, 0)))
+
+        assertEquals(LocalDateTime(LocalDate(2026, 1, 3), LocalTime(9, 0)), nextDateTime)
+    }
+
+    @Test
+    fun repeatsCustomDayIntervalCycle() {
+        val reminder = reminder(ReminderRecurrence.CyclicDayIntervals(listOf(2, 4, 8, 2, 6)))
+
+        val nextDateTime = useCase(reminder, LocalDateTime(LocalDate(2026, 1, 7), LocalTime(9, 0)))
+
+        assertEquals(LocalDateTime(LocalDate(2026, 1, 15), LocalTime(9, 0)), nextDateTime)
+    }
+
     private fun monthlyReminder(date: LocalDate, intervalMonths: Int, dayOfMonth: Int): Reminder = Reminder(
         id = "quarterly",
         title = "Quarterly task",
         date = date,
         time = LocalTime(9, 0),
         recurrence = ReminderRecurrence.EveryMonthsOnDay(intervalMonths, dayOfMonth),
+    )
+
+    private fun reminder(recurrence: ReminderRecurrence): Reminder = Reminder(
+        id = "custom",
+        title = "Custom reminder",
+        date = LocalDate(2026, 1, 1),
+        time = LocalTime(9, 0),
+        recurrence = recurrence,
     )
 }

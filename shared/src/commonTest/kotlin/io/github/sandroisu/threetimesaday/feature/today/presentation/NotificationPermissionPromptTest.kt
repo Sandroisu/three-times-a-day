@@ -1,6 +1,8 @@
 package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionStatus
+import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionAction
+import io.github.sandroisu.threetimesaday.core.notification.notificationPermissionPrompt
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull

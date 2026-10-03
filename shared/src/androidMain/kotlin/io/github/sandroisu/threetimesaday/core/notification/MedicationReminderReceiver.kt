@@ -23,20 +23,31 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         val message = intent.getStringExtra(EXTRA_MESSAGE).orEmpty()
         val notificationId = intent.getStringExtra(EXTRA_NOTIFICATION_ID).orEmpty()
         val notificationRequestCode = intent.getIntExtra(EXTRA_NOTIFICATION_REQUEST_CODE, 0)
+        val alarmDurationMinutes = intent.getIntExtra(EXTRA_ALARM_DURATION_MINUTES, 0)
         val notificationManager = context.getSystemService(NotificationManager::class.java) ?: return
         if (!hasPostNotificationsPermission(context)) {
             rescheduleFollowingReminders(context, notificationId)
             return
         }
-        ensureChannel(context, notificationManager)
-        val notification = buildNotification(
-            context = context,
-            title = title,
-            message = message,
-            notificationId = notificationId,
-            notificationRequestCode = notificationRequestCode
-        )
-        notificationManager.notify(notificationRequestCode, notification)
+        if (alarmDurationMinutes > 0) {
+            ReminderAlarmService.start(
+                context = context,
+                title = title,
+                message = message,
+                notificationId = notificationId,
+                maxDurationMinutes = alarmDurationMinutes,
+            )
+        } else {
+            ensureChannel(context, notificationManager)
+            val notification = buildNotification(
+                context = context,
+                title = title,
+                message = message,
+                notificationId = notificationId,
+                notificationRequestCode = notificationRequestCode
+            )
+            notificationManager.notify(notificationRequestCode, notification)
+        }
         rescheduleFollowingReminders(context, notificationId)
     }
 
@@ -77,6 +88,9 @@ class MedicationReminderReceiver : BroadcastReceiver() {
             .setContentText(message)
             .setSmallIcon(android.R.drawable.ic_popup_reminder)
             .setAutoCancel(true)
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .setPriority(Notification.PRIORITY_HIGH)
+            .setDefaults(Notification.DEFAULT_ALL)
             .setContentIntent(buildContentIntent(context, notificationId, notificationRequestCode))
             .build()
     }
@@ -135,6 +149,7 @@ class MedicationReminderReceiver : BroadcastReceiver() {
         const val EXTRA_MESSAGE = "extra_message"
         const val EXTRA_NOTIFICATION_ID = "extra_notification_id"
         const val EXTRA_NOTIFICATION_REQUEST_CODE = "extra_notification_request_code"
+        const val EXTRA_ALARM_DURATION_MINUTES = "extra_alarm_duration_minutes"
         const val LAUNCH_EXTRA_NOTIFICATION_ID = "io.github.sandroisu.threetimesaday.LAUNCH_NOTIFICATION_ID"
         const val LAUNCH_EXTRA_EVENT_ID = "io.github.sandroisu.threetimesaday.LAUNCH_EVENT_ID"
         const val LOG_TAG = "MedicationReminder"

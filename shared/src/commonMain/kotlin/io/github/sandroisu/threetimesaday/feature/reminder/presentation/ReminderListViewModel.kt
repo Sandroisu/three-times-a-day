@@ -2,10 +2,13 @@ package io.github.sandroisu.threetimesaday.feature.reminder.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderScheduler
+import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.FindNextReminderDateTimeUseCase
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.Reminder
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRepository
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.RescheduleRemindersUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,6 +21,9 @@ internal class ReminderListViewModel(
     private val reminderRepository: ReminderRepository,
     private val findNextReminderDateTime: FindNextReminderDateTimeUseCase,
     private val timeProvider: TimeProvider,
+    private val medicationReminderScheduler: MedicationReminderScheduler,
+    private val rescheduleReminders: RescheduleRemindersUseCase,
+    private val appSettingsOpener: AppSettingsOpener,
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(ReminderListUiState())
@@ -34,12 +40,58 @@ internal class ReminderListViewModel(
                 mutableUiState.update { currentState ->
                     currentState.copy(isLoading = false, reminders = reminders)
                 }
+                refreshNotificationState()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (loadFailure: Exception) {
                 mutableUiState.update { currentState ->
                     currentState.copy(isLoading = false, errorMessage = ReminderLabels.listError)
                 }
+            }
+        }
+    }
+
+    fun requestNotificationPermission() {
+        viewModelScope.launch {
+            try {
+                val permissionStatus = medicationReminderScheduler.requestPermission()
+                mutableUiState.update { state -> state.copy(notificationPermissionStatus = permissionStatus) }
+                rescheduleReminders()
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (notificationFailure: Exception) {
+                mutableUiState.update { state ->
+                    state.copy(notificationErrorMessage = ReminderLabels.notificationError)
+                }
+            }
+        }
+    }
+
+    fun openNotificationSettings() {
+        appSettingsOpener.openAppSettings()
+    }
+
+    fun openExactReminderSettings() {
+        appSettingsOpener.openExactReminderSettings()
+    }
+
+    private suspend fun refreshNotificationState() {
+        try {
+            val permissionStatus = medicationReminderScheduler.getPermissionStatus()
+            val exactRemindersAllowed = medicationReminderScheduler.areExactRemindersAllowed()
+            rescheduleReminders()
+            mutableUiState.update { state ->
+                state.copy(
+                    notificationPermissionStatus = permissionStatus,
+                    exactRemindersAllowed = exactRemindersAllowed,
+                    notificationErrorMessage = null,
+                )
+            }
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (notificationFailure: Exception) {
+            mutableUiState.update { state ->
+                state.copy(notificationErrorMessage = ReminderLabels.notificationError)
             }
         }
     }

@@ -4,6 +4,7 @@ import io.github.sandroisu.threetimesaday.core.storage.KeyValueStorage
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -51,46 +52,61 @@ class PersistentMedicationRepository(
     }
 
     private fun readMedications(): List<Medication> {
-        val storedMedications = keyValueStorage.getString(MEDICATIONS_KEY) ?: return createInitialMedications()
-        return runCatching { json.decodeFromString<List<Medication>>(storedMedications) }
-            .getOrElse { createInitialMedications() }
+        val storedMedications = keyValueStorage.getString(MEDICATIONS_KEY) ?: return emptyList()
+        val medications = runCatching { json.decodeFromString<List<Medication>>(storedMedications) }
+            .getOrElse { return emptyList() }
+        return removeLegacyDemoMedications(medications)
     }
 
     private fun writeMedications(medications: List<Medication>) {
         keyValueStorage.putString(MEDICATIONS_KEY, json.encodeToString(medications))
     }
 
-    private fun createInitialMedications(): List<Medication> {
-        val courseStartDate = LocalDate(2025, 1, 1)
-        return listOf(
+    private fun removeLegacyDemoMedications(medications: List<Medication>): List<Medication> {
+        if (keyValueStorage.getString(LEGACY_DEMO_MIGRATION_KEY) != null) {
+            return medications
+        }
+        val migratedMedications = medications.filterNot { medication -> medication in LEGACY_DEMO_MEDICATIONS }
+        if (migratedMedications != medications) {
+            writeMedications(migratedMedications)
+        }
+        keyValueStorage.putString(LEGACY_DEMO_MIGRATION_KEY, MIGRATION_COMPLETED_VALUE)
+        return migratedMedications
+    }
+
+    private companion object {
+        const val MEDICATIONS_KEY = "medications"
+        const val LEGACY_DEMO_MIGRATION_KEY = "legacy_demo_medications_removed"
+        const val MIGRATION_COMPLETED_VALUE = "true"
+
+        val LEGACY_DEMO_MEDICATIONS = listOf(
             Medication(
                 id = "entecavir",
                 name = "Энтекавир",
                 dosageText = "1 таблетка",
                 intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterWakeUp),
-                courseStartDate = courseStartDate,
-                courseEndDate = null
+                courseStartDate = LocalDate(2025, 1, 1),
+                courseEndDate = null,
+                recurrence = MedicationRecurrence.Daily,
             ),
             Medication(
                 id = "magnesium",
                 name = "Магний",
                 dosageText = "1 таблетка",
                 intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.BeforeSleep),
-                courseStartDate = courseStartDate,
-                courseEndDate = null
+                courseStartDate = LocalDate(2025, 1, 1),
+                courseEndDate = null,
+                recurrence = MedicationRecurrence.Daily,
             ),
             Medication(
                 id = "vitamin-d",
                 name = "Витамин D",
                 dosageText = "1 капсула",
                 intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterBreakfast),
-                courseStartDate = courseStartDate,
-                courseEndDate = null
-            )
+                courseStartDate = LocalDate(2025, 1, 1),
+                courseEndDate = null,
+                recurrence = MedicationRecurrence.Daily,
+            ),
         )
-    }
-
-    private companion object {
-        const val MEDICATIONS_KEY = "medications"
     }
 }

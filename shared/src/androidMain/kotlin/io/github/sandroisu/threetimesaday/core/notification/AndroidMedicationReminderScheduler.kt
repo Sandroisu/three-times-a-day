@@ -20,22 +20,27 @@ class AndroidMedicationReminderScheduler(
 ) : MedicationReminderScheduler {
 
     init {
-        ensureChannel()
+        ensureChannels()
     }
 
     override suspend fun getPermissionStatus(): NotificationPermissionStatus {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            val isGranted = context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-            return if (isGranted) NotificationPermissionStatus.Granted else NotificationPermissionStatus.NotDetermined
-        }
         val notificationManager = context.getSystemService(NotificationManager::class.java)
             ?: return NotificationPermissionStatus.NotSupported
-        return if (notificationManager.areNotificationsEnabled()) {
-            NotificationPermissionStatus.Granted
-        } else {
-            NotificationPermissionStatus.Denied
+        if (!notificationManager.areNotificationsEnabled()) {
+            return NotificationPermissionStatus.Denied
         }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+            notificationManager.getNotificationChannel(MedicationReminderReceiver.CHANNEL_ID)?.importance ==
+            NotificationManager.IMPORTANCE_NONE
+        ) {
+            return NotificationPermissionStatus.Denied
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) {
+            return NotificationPermissionStatus.NotDetermined
+        }
+        return NotificationPermissionStatus.Granted
     }
 
     override suspend fun requestPermission(): NotificationPermissionStatus {
@@ -63,7 +68,15 @@ class AndroidMedicationReminderScheduler(
         val useExact = canScheduleExact(alarmManager)
         val scheduled = try {
             if (useExact) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+                when (notification.deliveryMode) {
+                    NotificationDeliveryMode.Standard ->
+                        alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
+
+                    is NotificationDeliveryMode.Alarm -> alarmManager.setAlarmClock(
+                        AlarmManager.AlarmClockInfo(triggerAtMillis, buildAlarmClockDisplayIntent()),
+                        pendingIntent,
+                    )
+                }
             } else {
                 alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, pendingIntent)
             }
@@ -123,6 +136,10 @@ class AndroidMedicationReminderScheduler(
             putExtra(MedicationReminderReceiver.EXTRA_MESSAGE, notification.message)
             putExtra(MedicationReminderReceiver.EXTRA_NOTIFICATION_ID, notification.notificationId)
             putExtra(MedicationReminderReceiver.EXTRA_NOTIFICATION_REQUEST_CODE, requestCode)
+            putExtra(
+                MedicationReminderReceiver.EXTRA_ALARM_DURATION_MINUTES,
+                (notification.deliveryMode as? NotificationDeliveryMode.Alarm)?.maxDurationMinutes ?: 0,
+            )
         }
         return PendingIntent.getBroadcast(
             context,
@@ -139,7 +156,17 @@ class AndroidMedicationReminderScheduler(
         action = ACTION_MEDICATION_REMINDER
     }
 
-    private fun ensureChannel() {
+    private fun buildAlarmClockDisplayIntent(): PendingIntent? {
+        val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return null
+        return PendingIntent.getActivity(
+            context,
+            ALARM_CLOCK_DISPLAY_REQUEST_CODE,
+            launchIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+    }
+
+    private fun ensureChannels() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = context.getSystemService(NotificationManager::class.java) ?: return
             notificationManager.createNotificationChannel(
@@ -149,10 +176,22 @@ class AndroidMedicationReminderScheduler(
                     NotificationManager.IMPORTANCE_HIGH,
                 )
             )
+            notificationManager.createNotificationChannel(
+                NotificationChannel(
+                    ReminderAlarmService.CHANNEL_ID,
+                    context.getString(R.string.alarm_channel),
+                    NotificationManager.IMPORTANCE_HIGH,
+                ).apply {
+                    description = context.getString(R.string.alarm_channel_description)
+                    setSound(null, null)
+                    enableVibration(false)
+                }
+            )
         }
     }
 
     private companion object {
         const val ACTION_MEDICATION_REMINDER = "io.github.sandroisu.threetimesaday.MEDICATION_REMINDER"
+        const val ALARM_CLOCK_DISPLAY_REQUEST_CODE = 0x524d4e44
     }
 }
