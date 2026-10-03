@@ -9,5 +9,7 @@
 	</array>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Remindly uses alarms only for reminders that you explicitly configure as an alarm.</string>
 </dict>
 </plist>

@@ -32,58 +32,41 @@ class RescheduleMedicationRemindersUseCase(
         if (replaceExistingReminders) {
             medicationReminderScheduler.cancelRemindersWithPrefix(MEDICATION_REMINDER_ID_PREFIX)
         }
-        val nextScheduledDateTime = findNextScheduledDateTime(
-            currentDateTime = currentDateTime,
-            dailySchedule = dailySchedule,
-            medications = medications,
-        ) ?: return
-        eventsForScheduledDateTime(
-            scheduledDateTime = nextScheduledDateTime,
+        if (medications.isEmpty()) {
+            return
+        }
+        findUpcomingEvents(
             currentDateTime = currentDateTime,
             dailySchedule = dailySchedule,
             medications = medications,
         ).forEach { event -> medicationReminderScheduler.scheduleReminder(buildNotification(event)) }
     }
 
-    private suspend fun findNextScheduledDateTime(
-        currentDateTime: LocalDateTime,
-        dailySchedule: DailySchedule,
-        medications: List<Medication>,
-    ): LocalDateTime? {
-        for (date in datesToSearch(currentDateTime.date)) {
-            val generatedEvents = generateMedicationIntakeEventsForDate(date, dailySchedule, medications)
-            val records = medicationIntakeRecordRepository.getRecordsForDate(date)
-            val intakeEvents = applyMedicationIntakeRecords(generatedEvents, records)
-            val nextEvent = intakeEvents
-                .filter { event ->
-                    event.status == MedicationIntakeStatus.Scheduled ||
-                        event.status == MedicationIntakeStatus.Postponed
-                }
-                .firstOrNull { event -> event.scheduledDateTime > currentDateTime }
-            if (nextEvent != null) {
-                return nextEvent.scheduledDateTime
-            }
-        }
-        return null
-    }
-
-    private suspend fun eventsForScheduledDateTime(
-        scheduledDateTime: LocalDateTime,
+    private suspend fun findUpcomingEvents(
         currentDateTime: LocalDateTime,
         dailySchedule: DailySchedule,
         medications: List<Medication>,
     ): List<MedicationIntakeEvent> {
-        val generatedEvents = generateMedicationIntakeEventsForDate(
-            scheduledDateTime.date,
-            dailySchedule,
-            medications,
-        )
-        val records = medicationIntakeRecordRepository.getRecordsForDate(scheduledDateTime.date)
-        return applyMedicationIntakeRecords(generatedEvents, records)
-            .filter { event ->
-                (event.status == MedicationIntakeStatus.Scheduled || event.status == MedicationIntakeStatus.Postponed) &&
-                    event.scheduledDateTime == scheduledDateTime && event.scheduledDateTime > currentDateTime
+        val upcomingEvents = mutableListOf<MedicationIntakeEvent>()
+        for (date in datesToSearch(currentDateTime.date)) {
+            val generatedEvents = generateMedicationIntakeEventsForDate(date, dailySchedule, medications)
+            if (generatedEvents.isEmpty()) {
+                continue
             }
+            val records = medicationIntakeRecordRepository.getRecordsForDate(date)
+            val scheduledEvents = applyMedicationIntakeRecords(generatedEvents, records)
+                .filter { event ->
+                    event.status == MedicationIntakeStatus.Scheduled ||
+                        event.status == MedicationIntakeStatus.Postponed
+                }
+                .filter { event -> event.scheduledDateTime > currentDateTime }
+            upcomingEvents.addAll(scheduledEvents)
+            if (upcomingEvents.size >= MAX_SCHEDULED_OCCURRENCES) {
+                return upcomingEvents.sortedBy { event -> event.scheduledDateTime }
+                    .take(MAX_SCHEDULED_OCCURRENCES)
+            }
+        }
+        return upcomingEvents.sortedBy { event -> event.scheduledDateTime }
     }
 
     private fun datesToSearch(startDate: LocalDate): List<LocalDate> =
@@ -99,5 +82,7 @@ class RescheduleMedicationRemindersUseCase(
 
     private companion object {
         const val SCHEDULING_LOOKAHEAD_DAYS = 25 * 31
+        // Medication and personal reminders split iOS's 64 pending-notification slots.
+        const val MAX_SCHEDULED_OCCURRENCES = 32
     }
 }

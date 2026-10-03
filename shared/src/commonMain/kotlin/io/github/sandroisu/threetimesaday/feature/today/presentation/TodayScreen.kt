@@ -33,6 +33,8 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.repeatOnLifecycle
+import io.github.sandroisu.threetimesaday.core.notification.NotificationPermissionAction
+import io.github.sandroisu.threetimesaday.core.notification.notificationPermissionPrompt
 import io.github.sandroisu.threetimesaday.core.ui.AppIcons
 import io.github.sandroisu.threetimesaday.core.ui.AppSpacing
 import io.github.sandroisu.threetimesaday.core.ui.IconLabel

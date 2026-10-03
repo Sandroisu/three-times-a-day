@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="reminder_channel">Напоминания</string>
+    <string name="alarm_channel">Будильники</string>
+    <string name="alarm_channel_description">Непрерывные сигналы, которые звучат до выключения</string>
+    <string name="alarm_stop">Выключить</string>
 </resources>

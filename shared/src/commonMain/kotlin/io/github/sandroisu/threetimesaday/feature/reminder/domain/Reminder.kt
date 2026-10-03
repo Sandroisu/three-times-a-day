@@ -11,4 +11,5 @@ data class Reminder(
     val date: LocalDate,
     val time: LocalTime,
     val recurrence: ReminderRecurrence,
+    val alertMode: ReminderAlertMode = ReminderAlertMode.Notification,
 )

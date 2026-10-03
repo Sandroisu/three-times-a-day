@@ -14,7 +14,8 @@ class MedicationReminderBootReceiver : BroadcastReceiver() {
         val action = intent?.action
         if (action != Intent.ACTION_BOOT_COMPLETED &&
             action != Intent.ACTION_TIME_CHANGED &&
-            action != Intent.ACTION_TIMEZONE_CHANGED
+            action != Intent.ACTION_TIMEZONE_CHANGED &&
+            action != ACTION_EXACT_ALARM_PERMISSION_STATE_CHANGED
         ) {
             return
         }
@@ -33,6 +34,8 @@ class MedicationReminderBootReceiver : BroadcastReceiver() {
     }
 
     private companion object {
+        const val ACTION_EXACT_ALARM_PERMISSION_STATE_CHANGED =
+            "android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"
         const val LOG_TAG = "MedicationReminderBoot"
     }
 }

@@ -2,6 +2,7 @@ package io.github.sandroisu.threetimesaday.feature.reminder.data
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.Reminder
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderAlertMode
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRecurrence
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -23,13 +24,28 @@ class PersistentReminderRepositoryTest {
             title = "Pay taxes",
             date = LocalDate(2026, 1, 14),
             time = LocalTime(9, 30),
-            recurrence = ReminderRecurrence.EveryMonthsOnDay(3, 14),
+            recurrence = ReminderRecurrence.CyclicDayIntervals(listOf(2, 4, 8, 2, 6)),
+            alertMode = ReminderAlertMode.Alarm,
         )
         PersistentReminderRepository(storage, json).saveReminder(reminder)
 
         val restoredReminders = PersistentReminderRepository(storage, json).getReminders()
 
         assertEquals(listOf(reminder), restoredReminders)
+    }
+
+    @Test
+    fun reminderSavedBeforeAlertModesDefaultsToNotification() = runTest {
+        val storage = InMemoryKeyValueStorage().apply {
+            putString(
+                "reminders",
+                """[{"id":"legacy","title":"Legacy reminder","date":"2026-01-14","time":"09:30:00","recurrence":{"type":"io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRecurrence.Once"}}]""",
+            )
+        }
+
+        val restoredReminder = PersistentReminderRepository(storage, json).getReminders().single()
+
+        assertEquals(ReminderAlertMode.Notification, restoredReminder.alertMode)
     }
 
     @Test

@@ -92,7 +92,11 @@ class RescheduleMedicationRemindersUseCaseTest {
 
         useCase()
 
-        assertEquals(LocalDateTime(LocalDate(2026, 4, 14), LocalTime(20, 0)), scheduler.scheduledNotifications.single().scheduledDateTime)
+        assertEquals(
+            LocalDateTime(LocalDate(2026, 4, 14), LocalTime(20, 0)),
+            scheduler.scheduledNotifications.first().scheduledDateTime,
+        )
+        assertTrue(scheduler.scheduledNotifications.size > 1)
     }
 
     @Test

@@ -3,6 +3,9 @@ package io.github.sandroisu.threetimesaday.feature.reminder.domain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.Month
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.plus
 
 class FindNextReminderDateTimeUseCase {
 
@@ -11,12 +14,116 @@ class FindNextReminderDateTimeUseCase {
             ReminderRecurrence.Once -> LocalDateTime(reminder.date, reminder.time)
                 .takeIf { scheduledDateTime -> scheduledDateTime > after }
 
+            ReminderRecurrence.Daily -> nextEveryDaysDateTime(
+                reminder = reminder,
+                intervalDays = 1,
+                after = after,
+            )
+
+            is ReminderRecurrence.OnWeekdays -> nextWeekdayDateTime(
+                reminder = reminder,
+                recurrence = recurrence,
+                after = after,
+            )
+
+            is ReminderRecurrence.EveryDays -> nextEveryDaysDateTime(
+                reminder = reminder,
+                intervalDays = recurrence.intervalDays,
+                after = after,
+            )
+
             is ReminderRecurrence.EveryMonthsOnDay -> nextMonthlyDateTime(
                 reminder = reminder,
                 recurrence = recurrence,
                 after = after,
             )
+
+            is ReminderRecurrence.CyclicDayIntervals -> nextCyclicDateTime(
+                reminder = reminder,
+                recurrence = recurrence,
+                after = after,
+            )
         }
+
+    private fun nextEveryDaysDateTime(
+        reminder: Reminder,
+        intervalDays: Int,
+        after: LocalDateTime,
+    ): LocalDateTime? {
+        if (intervalDays !in MIN_INTERVAL_DAYS..MAX_INTERVAL_DAYS) {
+            return null
+        }
+        val firstDateTime = LocalDateTime(reminder.date, reminder.time)
+        if (firstDateTime > after) {
+            return firstDateTime
+        }
+        val daysSinceStart = reminder.date.daysUntil(after.date).coerceAtLeast(0)
+        var occurrenceIndex = daysSinceStart / intervalDays
+        while (true) {
+            val scheduledDate = reminder.date.plus(occurrenceIndex * intervalDays, DateTimeUnit.DAY)
+            val scheduledDateTime = LocalDateTime(scheduledDate, reminder.time)
+            if (scheduledDateTime > after) {
+                return scheduledDateTime
+            }
+            occurrenceIndex += 1
+        }
+    }
+
+    private fun nextWeekdayDateTime(
+        reminder: Reminder,
+        recurrence: ReminderRecurrence.OnWeekdays,
+        after: LocalDateTime,
+    ): LocalDateTime? {
+        val selectedDayNumbers = recurrence.weekdays.map { weekday -> weekday.isoDayNumber }.toSet()
+        if (selectedDayNumbers.isEmpty()) {
+            return null
+        }
+        val firstCandidateDate = if (after.date < reminder.date) reminder.date else after.date
+        for (dayOffset in 0 until DAYS_IN_TWO_WEEKS) {
+            val candidateDate = firstCandidateDate.plus(dayOffset, DateTimeUnit.DAY)
+            val candidateDateTime = LocalDateTime(candidateDate, reminder.time)
+            if (candidateDate.dayOfWeek.ordinal + 1 in selectedDayNumbers &&
+                candidateDateTime >= LocalDateTime(reminder.date, reminder.time) &&
+                candidateDateTime > after
+            ) {
+                return candidateDateTime
+            }
+        }
+        return null
+    }
+
+    private fun nextCyclicDateTime(
+        reminder: Reminder,
+        recurrence: ReminderRecurrence.CyclicDayIntervals,
+        after: LocalDateTime,
+    ): LocalDateTime? {
+        val intervals = recurrence.intervals
+        if (intervals.isEmpty() || intervals.size > MAX_CYCLIC_INTERVAL_COUNT ||
+            intervals.any { interval -> interval !in MIN_INTERVAL_DAYS..MAX_INTERVAL_DAYS }
+        ) {
+            return null
+        }
+        val firstDateTime = LocalDateTime(reminder.date, reminder.time)
+        if (firstDateTime > after) {
+            return firstDateTime
+        }
+        val cycleDayCount = intervals.sum()
+        val daysSinceStart = reminder.date.daysUntil(after.date).coerceAtLeast(0)
+        var cycleStartDay = daysSinceStart / cycleDayCount * cycleDayCount
+        repeat(2) {
+            var dayOffsetInCycle = 0
+            intervals.forEach { intervalDays ->
+                val scheduledDate = reminder.date.plus(cycleStartDay + dayOffsetInCycle, DateTimeUnit.DAY)
+                val scheduledDateTime = LocalDateTime(scheduledDate, reminder.time)
+                if (scheduledDateTime > after) {
+                    return scheduledDateTime
+                }
+                dayOffsetInCycle += intervalDays
+            }
+            cycleStartDay += cycleDayCount
+        }
+        return null
+    }
 
     private fun nextMonthlyDateTime(
         reminder: Reminder,
@@ -65,8 +172,12 @@ class FindNextReminderDateTimeUseCase {
 
     private companion object {
         const val MONTHS_IN_YEAR = 12
+        const val DAYS_IN_TWO_WEEKS = 14
+        const val MIN_INTERVAL_DAYS = 1
+        const val MAX_INTERVAL_DAYS = 3_650
+        const val MAX_CYCLIC_INTERVAL_COUNT = 32
         const val MIN_INTERVAL_MONTHS = 1
-        const val MAX_INTERVAL_MONTHS = 24
+        const val MAX_INTERVAL_MONTHS = 120
         const val MIN_DAY_OF_MONTH = 1
         const val MAX_DAY_OF_MONTH = 31
         const val FEBRUARY_DAYS = 28

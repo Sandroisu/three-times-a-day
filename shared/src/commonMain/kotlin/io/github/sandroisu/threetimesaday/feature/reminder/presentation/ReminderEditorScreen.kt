@@ -33,6 +33,8 @@ import io.github.sandroisu.threetimesaday.core.ui.ScreenHeader
 import io.github.sandroisu.threetimesaday.core.ui.SectionHeader
 import io.github.sandroisu.threetimesaday.core.ui.TimeInputField
 import io.github.sandroisu.threetimesaday.core.ui.UiLabels
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderAlertMode
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderWeekday
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -82,10 +84,13 @@ internal fun ReminderEditorScreen(
                     onTitleChanged = reminderEditorViewModel::onTitleChanged,
                     onDateChanged = reminderEditorViewModel::onDateChanged,
                     onTimeChanged = reminderEditorViewModel::onTimeChanged,
-                    onOnceSelected = reminderEditorViewModel::onOnceSelected,
-                    onMonthlyRecurrenceSelected = reminderEditorViewModel::onMonthlyRecurrenceSelected,
+                    onRecurrenceTypeSelected = reminderEditorViewModel::onRecurrenceTypeSelected,
+                    onWeekdayToggled = reminderEditorViewModel::onWeekdayToggled,
+                    onDayIntervalChanged = reminderEditorViewModel::onDayIntervalChanged,
                     onMonthlyIntervalChanged = reminderEditorViewModel::onMonthlyIntervalChanged,
                     onMonthlyDayOfMonthChanged = reminderEditorViewModel::onMonthlyDayOfMonthChanged,
+                    onCyclicIntervalsChanged = reminderEditorViewModel::onCyclicIntervalsChanged,
+                    onAlertModeSelected = reminderEditorViewModel::onAlertModeSelected,
                 )
             }
         }
@@ -125,10 +130,13 @@ private fun ReminderForm(
     onTitleChanged: (String) -> Unit,
     onDateChanged: (String) -> Unit,
     onTimeChanged: (String) -> Unit,
-    onOnceSelected: () -> Unit,
-    onMonthlyRecurrenceSelected: () -> Unit,
+    onRecurrenceTypeSelected: (ReminderRecurrenceType) -> Unit,
+    onWeekdayToggled: (ReminderWeekday) -> Unit,
+    onDayIntervalChanged: (String) -> Unit,
     onMonthlyIntervalChanged: (String) -> Unit,
     onMonthlyDayOfMonthChanged: (String) -> Unit,
+    onCyclicIntervalsChanged: (String) -> Unit,
+    onAlertModeSelected: (ReminderAlertMode) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.section)) {
         FormField(
@@ -153,38 +161,102 @@ private fun ReminderForm(
                 onValueChange = onTimeChanged,
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
-                FilterChip(
-                    selected = !uiState.isMonthlyRecurrence,
-                    onClick = onOnceSelected,
-                    label = { Text(ReminderLabels.once.asString()) },
-                )
-                FilterChip(
-                    selected = uiState.isMonthlyRecurrence,
-                    onClick = onMonthlyRecurrenceSelected,
-                    label = { Text(ReminderLabels.monthly.asString()) },
-                )
+                ReminderRecurrenceType.entries.forEach { recurrenceType ->
+                    FilterChip(
+                        selected = uiState.recurrenceType == recurrenceType,
+                        onClick = { onRecurrenceTypeSelected(recurrenceType) },
+                        label = { Text(reminderRecurrenceTypeLabel(recurrenceType).asString()) },
+                    )
+                }
             }
-            if (uiState.isMonthlyRecurrence) {
-                FormField(
-                    label = ReminderLabels.repeatEveryMonths.asString(),
-                    value = uiState.monthlyIntervalText,
-                    onValueChange = onMonthlyIntervalChanged,
-                    error = uiState.monthlyIntervalError?.asString(),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-                )
-                FormField(
-                    label = ReminderLabels.dayOfMonth.asString(),
-                    value = uiState.monthlyDayOfMonthText,
-                    onValueChange = onMonthlyDayOfMonthChanged,
-                    error = uiState.monthlyDayOfMonthError?.asString(),
+            when (uiState.recurrenceType) {
+                ReminderRecurrenceType.Once,
+                ReminderRecurrenceType.Daily -> Unit
+
+                ReminderRecurrenceType.Weekdays -> {
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
+                        ReminderWeekday.entries.forEach { weekday ->
+                            FilterChip(
+                                selected = weekday in uiState.selectedWeekdays,
+                                onClick = { onWeekdayToggled(weekday) },
+                                label = { Text(reminderWeekdayShortLabel(weekday).asString()) },
+                            )
+                        }
+                    }
+                    uiState.weekdaysError?.let { error ->
+                        Text(error.asString(), color = MaterialTheme.colorScheme.error)
+                    }
+                }
+
+                ReminderRecurrenceType.EveryDays -> FormField(
+                    label = ReminderLabels.repeatEveryDays.asString(),
+                    value = uiState.dayIntervalText,
+                    onValueChange = onDayIntervalChanged,
+                    error = uiState.dayIntervalError?.asString(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
                 )
-                Text(
-                    ReminderLabels.shortMonthHint.asString(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+
+                ReminderRecurrenceType.EveryMonths -> {
+                    FormField(
+                        label = ReminderLabels.repeatEveryMonths.asString(),
+                        value = uiState.monthlyIntervalText,
+                        onValueChange = onMonthlyIntervalChanged,
+                        error = uiState.monthlyIntervalError?.asString(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+                    )
+                    FormField(
+                        label = ReminderLabels.dayOfMonth.asString(),
+                        value = uiState.monthlyDayOfMonthText,
+                        onValueChange = onMonthlyDayOfMonthChanged,
+                        error = uiState.monthlyDayOfMonthError?.asString(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+                    )
+                    Text(
+                        ReminderLabels.shortMonthHint.asString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+
+                ReminderRecurrenceType.CyclicIntervals -> {
+                    FormField(
+                        label = ReminderLabels.cyclicIntervals.asString(),
+                        value = uiState.cyclicIntervalsText,
+                        onValueChange = onCyclicIntervalsChanged,
+                        error = uiState.cyclicIntervalsError?.asString(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Done),
+                    )
+                    Text(
+                        ReminderLabels.cyclicIntervalsHint.asString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.standard)) {
+            SectionHeader(ReminderLabels.alertType.asString())
+            FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
+                FilterChip(
+                    selected = uiState.alertMode == ReminderAlertMode.Notification,
+                    onClick = { onAlertModeSelected(ReminderAlertMode.Notification) },
+                    label = { Text(ReminderLabels.normalAlert.asString()) },
+                )
+                FilterChip(
+                    selected = uiState.alertMode == ReminderAlertMode.Alarm,
+                    onClick = { onAlertModeSelected(ReminderAlertMode.Alarm) },
+                    label = { Text(ReminderLabels.alarmAlert.asString()) },
                 )
             }
+            Text(
+                if (uiState.alertMode == ReminderAlertMode.Alarm) {
+                    ReminderLabels.alarmAlertHint.asString()
+                } else {
+                    ReminderLabels.normalAlertHint.asString()
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
         uiState.generalErrorMessage?.let { errorMessage -> Notice(errorMessage.asString(), isError = true) }
     }

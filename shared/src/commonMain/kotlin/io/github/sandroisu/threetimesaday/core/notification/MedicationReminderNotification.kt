@@ -9,5 +9,6 @@ data class MedicationReminderNotification(
     val notificationId: String,
     val title: String,
     val message: String,
-    val scheduledDateTime: LocalDateTime
+    val scheduledDateTime: LocalDateTime,
+    val deliveryMode: NotificationDeliveryMode = NotificationDeliveryMode.Standard,
 )
