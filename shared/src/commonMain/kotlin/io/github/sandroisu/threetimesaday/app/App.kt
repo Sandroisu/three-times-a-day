@@ -32,6 +32,7 @@ import io.github.sandroisu.threetimesaday.feature.reminder.presentation.Reminder
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListScreen
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListViewModel
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorScreen
+import io.github.sandroisu.threetimesaday.feature.settings.presentation.SettingsScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.MedicationUpcomingIntakes
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayLabels
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayScreen
@@ -52,6 +53,7 @@ private object AppDestination {
     const val ReminderList = "reminders"
     const val NewReminder = "reminder/new"
     const val ReminderEditor = "reminder/{reminderId}"
+    const val Settings = "settings"
 }
 
 @Composable
@@ -106,6 +108,7 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                             TodayScreen(
                                 onEditScheduleClick = { navController.navigate(AppDestination.ScheduleEditor) },
                                 onEditMedicationsClick = { navController.navigate(AppDestination.MedicationList) },
+                                onSettingsClick = { navController.navigate(AppDestination.Settings) },
                                 todayViewModel = todayViewModel,
                             )
                         }
@@ -162,6 +165,7 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                             ReminderListScreen(
                                 onAddReminderClick = { navController.navigate(AppDestination.NewReminder) },
                                 onReminderClick = { reminderId -> navController.navigate("reminder/$reminderId") },
+                                onSettingsClick = { navController.navigate(AppDestination.Settings) },
                                 reminderListViewModel = reminderListViewModel,
                             )
                         }
@@ -180,6 +184,9 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                                 onReminderSaved = { navController.popBackStack() },
                                 onReminderDeleted = { navController.popBackStack() },
                             )
+                        }
+                        composable(AppDestination.Settings) {
+                            SettingsScreen(onBackClick = { navController.popBackStack() })
                         }
                     }
                 }

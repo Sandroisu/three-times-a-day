@@ -7,6 +7,9 @@
     <string name="common_cancel">Cancel</string>
     <string name="common_save">Save</string>
     <string name="common_back">Back</string>
+    <string name="settings_title">Settings</string>
+    <string name="common_open_settings">Open settings</string>
+    <string name="settings_about">About</string>
     <string name="common_privacy_policy">Privacy policy</string>
     <string name="common_privacy_policy_title">Privacy policy and medical disclaimer</string>
     <string name="common_privacy_policy_text">Remindly is a medication reminder, adherence tracker, and personal event reminder. It is not a medical device and does not provide medical advice, diagnoses, or treatment recommendations.\n\nMedication names, doses, schedules, intake statuses, and personal reminders are stored only on this device. The app has no accounts, servers, analytics, advertising, or data sharing. The app does not send this information to the developer. Your device backup settings may back up app data as part of the operating system.\n\nYou can delete medications and reminders in the app. Deleting the app removes its local data from the device. For questions, use the developer contact listed on Google Play.</string>

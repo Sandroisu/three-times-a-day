@@ -23,9 +23,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -41,10 +38,9 @@ import io.github.sandroisu.threetimesaday.core.ui.IconLabel
 import io.github.sandroisu.threetimesaday.core.ui.LoadingIndicator
 import io.github.sandroisu.threetimesaday.core.ui.Notice
 import io.github.sandroisu.threetimesaday.core.ui.PrimaryActionButton
-import io.github.sandroisu.threetimesaday.core.ui.PrivacyPolicyDialog
 import io.github.sandroisu.threetimesaday.core.ui.ScreenHeader
+import io.github.sandroisu.threetimesaday.core.ui.SettingsIconButton
 import io.github.sandroisu.threetimesaday.core.ui.SectionHeader
-import io.github.sandroisu.threetimesaday.core.ui.UiLabels
 import kotlinx.coroutines.delay
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -56,10 +52,10 @@ private const val INTAKE_LIST_HEADER_COUNT = 3
 internal fun TodayScreen(
     onEditScheduleClick: () -> Unit,
     onEditMedicationsClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     todayViewModel: TodayViewModel = koinViewModel(),
 ) {
     val uiState by todayViewModel.uiState.collectAsStateWithLifecycle()
-    var isPrivacyPolicyVisible by remember { mutableStateOf(false) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { todayViewModel.loadToday() }
     RefreshIntakeTime(todayViewModel)
     TodayContent(
@@ -73,12 +69,9 @@ internal fun TodayScreen(
         onEnableNotificationsClick = todayViewModel::requestNotificationPermission,
         onOpenSettingsClick = todayViewModel::openNotificationSettings,
         onOpenExactReminderSettingsClick = todayViewModel::openExactReminderSettings,
-        onPrivacyPolicyClick = { isPrivacyPolicyVisible = true },
+        onSettingsClick = onSettingsClick,
         onRetry = todayViewModel::loadToday,
     )
-    if (isPrivacyPolicyVisible) {
-        PrivacyPolicyDialog(onDismissRequest = { isPrivacyPolicyVisible = false })
-    }
 }
 
 @Composable
@@ -106,7 +99,7 @@ internal fun TodayContent(
     onEnableNotificationsClick: () -> Unit,
     onOpenSettingsClick: () -> Unit,
     onOpenExactReminderSettingsClick: () -> Unit,
-    onPrivacyPolicyClick: () -> Unit,
+    onSettingsClick: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -141,7 +134,11 @@ internal fun TodayContent(
     ) {
         item(key = "header") {
             Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.standard)) {
-                ScreenHeader(uiState.screenTitle.asString(), subtitle = uiState.dateTitle?.asString().orEmpty().takeIf { it.isNotEmpty() })
+                ScreenHeader(
+                    uiState.screenTitle.asString(),
+                    subtitle = uiState.dateTitle?.asString().orEmpty().takeIf { it.isNotEmpty() },
+                    action = { SettingsIconButton(onClick = onSettingsClick) },
+                )
                 Row(horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
                     OutlinedButton(onClick = onEditMedicationsClick, modifier = Modifier.weight(1f)) {
                         Text(TodayLabels.medications.asString())
@@ -170,9 +167,6 @@ internal fun TodayContent(
                     }
                 }
             }
-        }
-        item(key = "privacy-policy") {
-            TextButton(onClick = onPrivacyPolicyClick) { Text(UiLabels.privacyPolicy.asString()) }
         }
         uiState.notificationErrorMessage?.let { message ->
             item(key = "notification-error") { Notice(message.asString(), isError = true) }

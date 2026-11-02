@@ -7,6 +7,7 @@ import threetimesaday.shared.generated.resources.common_choose_time
 import threetimesaday.shared.generated.resources.common_confirm
 import threetimesaday.shared.generated.resources.common_date_error
 import threetimesaday.shared.generated.resources.common_date_hint
+import threetimesaday.shared.generated.resources.common_open_settings
 import threetimesaday.shared.generated.resources.common_save
 import threetimesaday.shared.generated.resources.common_privacy_policy
 import threetimesaday.shared.generated.resources.common_privacy_policy_text
@@ -24,6 +25,7 @@ internal object UiLabels {
     val timeError = UiText(Res.string.common_time_error)
     val dateHint = UiText(Res.string.common_date_hint)
     val dateError = UiText(Res.string.common_date_error)
+    val openSettings = UiText(Res.string.common_open_settings)
     val privacyPolicy = UiText(Res.string.common_privacy_policy)
     val privacyPolicyTitle = UiText(Res.string.common_privacy_policy_title)
     val privacyPolicyText = UiText(Res.string.common_privacy_policy_text)

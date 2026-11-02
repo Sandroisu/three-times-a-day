@@ -32,6 +32,7 @@ import io.github.sandroisu.threetimesaday.core.ui.LoadingIndicator
 import io.github.sandroisu.threetimesaday.core.ui.Notice
 import io.github.sandroisu.threetimesaday.core.ui.PrimaryActionButton
 import io.github.sandroisu.threetimesaday.core.ui.ScreenHeader
+import io.github.sandroisu.threetimesaday.core.ui.SettingsIconButton
 import io.github.sandroisu.threetimesaday.core.ui.SectionHeader
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -39,6 +40,7 @@ import org.koin.compose.viewmodel.koinViewModel
 internal fun ReminderListScreen(
     onAddReminderClick: () -> Unit,
     onReminderClick: (String) -> Unit,
+    onSettingsClick: () -> Unit,
     reminderListViewModel: ReminderListViewModel = koinViewModel(),
 ) {
     val uiState by reminderListViewModel.uiState.collectAsStateWithLifecycle()
@@ -51,7 +53,11 @@ internal fun ReminderListScreen(
             verticalArrangement = Arrangement.spacedBy(AppSpacing.medium),
         ) {
             item {
-                ScreenHeader(ReminderLabels.reminders.asString(), subtitle = ReminderLabels.listSubtitle.asString())
+                ScreenHeader(
+                    ReminderLabels.reminders.asString(),
+                    subtitle = ReminderLabels.listSubtitle.asString(),
+                    action = { SettingsIconButton(onClick = onSettingsClick) },
+                )
             }
             if (permissionPrompt != null) {
                 item(key = "notification-permission") {

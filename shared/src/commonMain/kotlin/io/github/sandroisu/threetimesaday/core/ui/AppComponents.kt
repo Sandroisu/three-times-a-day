@@ -13,6 +13,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -31,6 +32,7 @@ internal fun ScreenHeader(
     title: String,
     onBackClick: (() -> Unit)? = null,
     subtitle: String? = null,
+    action: (@Composable () -> Unit)? = null,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
         if (onBackClick != null) {
@@ -39,10 +41,24 @@ internal fun ScreenHeader(
                 Text(UiLabels.back.asString(), modifier = Modifier.padding(start = AppSpacing.compact))
             }
         }
-        Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                title,
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            action?.invoke()
+        }
         if (subtitle != null) {
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+@Composable
+internal fun SettingsIconButton(onClick: () -> Unit) {
+    IconButton(onClick = onClick) {
+        Icon(AppIcons.Settings, contentDescription = UiLabels.openSettings.asString())
     }
 }
 
