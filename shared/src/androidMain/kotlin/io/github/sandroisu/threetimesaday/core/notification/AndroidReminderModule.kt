@@ -1,6 +1,8 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
 import android.content.Context
+import io.github.sandroisu.threetimesaday.core.logging.AndroidErrorLogger
+import io.github.sandroisu.threetimesaday.core.logging.ErrorLogger
 import io.github.sandroisu.threetimesaday.core.settings.AndroidAppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import org.koin.core.module.Module
@@ -14,6 +16,7 @@ fun androidReminderModule(
         AndroidMedicationReminderScheduler(context, permissionController, get())
     }
     single<AppSettingsOpener> { AndroidAppSettingsOpener(context) }
+    single<ErrorLogger> { AndroidErrorLogger() }
 }
 
 fun previewReminderModule(): Module = module {
@@ -22,4 +25,5 @@ fun previewReminderModule(): Module = module {
         override fun openAppSettings() = Unit
         override fun openExactReminderSettings() = Unit
     } }
+    single<ErrorLogger> { AndroidErrorLogger() }
 }

@@ -1,5 +1,7 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
+import io.github.sandroisu.threetimesaday.core.logging.ErrorLogger
+import io.github.sandroisu.threetimesaday.core.logging.IosErrorLogger
 import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.settings.IosAppSettingsOpener
 import org.koin.core.module.Module
@@ -8,4 +10,5 @@ import org.koin.dsl.module
 fun iosReminderModule(alarmBridge: IosAlarmBridge? = null): Module = module {
     single<MedicationReminderScheduler> { IosMedicationReminderScheduler(alarmBridge) }
     single<AppSettingsOpener> { IosAppSettingsOpener() }
+    single<ErrorLogger> { IosErrorLogger() }
 }
