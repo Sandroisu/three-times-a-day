@@ -1,5 +1,6 @@
 package io.github.sandroisu.threetimesaday.core.di
 
+import io.github.sandroisu.threetimesaday.app.AppViewModel
 import io.github.sandroisu.threetimesaday.core.network.HttpClientFactory
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderLaunchRepository
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderRegistry
@@ -25,6 +26,9 @@ import io.github.sandroisu.threetimesaday.feature.reminder.presentation.Reminder
 import io.github.sandroisu.threetimesaday.feature.schedule.data.PersistentDailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorViewModel
+import io.github.sandroisu.threetimesaday.feature.settings.data.PersistentStartScreenRepository
+import io.github.sandroisu.threetimesaday.feature.settings.domain.StartScreenRepository
+import io.github.sandroisu.threetimesaday.feature.settings.presentation.SettingsViewModel
 import io.github.sandroisu.threetimesaday.feature.today.data.PersistentMedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
@@ -52,6 +56,7 @@ val commonAppModule = module {
     single<MedicationIdGenerator> { IncrementingMedicationIdGenerator() }
     single<ReminderRepository> { PersistentReminderRepository(get(), get()) }
     single<ReminderIdGenerator> { PersistentReminderIdGenerator(get()) }
+    single<StartScreenRepository> { PersistentStartScreenRepository(get()) }
     single<MedicationIntakeRecordRepository> { PersistentMedicationIntakeRecordRepository(get(), get()) }
     single { GenerateMedicationIntakeEventsForDateUseCase() }
     single { ApplyMedicationIntakeRecordsUseCase() }
@@ -85,4 +90,6 @@ val commonAppModule = module {
     viewModelOf(::MedicationEditorViewModel)
     viewModelOf(::ReminderListViewModel)
     viewModelOf(::ReminderEditorViewModel)
+    viewModelOf(::SettingsViewModel)
+    viewModelOf(::AppViewModel)
 }

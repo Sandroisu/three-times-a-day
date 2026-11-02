@@ -9,6 +9,12 @@
     <string name="common_back">Назад</string>
     <string name="settings_title">Настройки</string>
     <string name="common_open_settings">Открыть настройки</string>
+    <string name="settings_start_screen">Стартовый экран</string>
+    <string name="settings_start_screen_hint">Экран, который открывается при запуске приложения.</string>
+    <string name="settings_start_screen_reminders">Напоминания</string>
+    <string name="settings_start_screen_medications">Препараты</string>
+    <string name="settings_load_error">Не удалось загрузить настройки</string>
+    <string name="settings_save_error">Не удалось сохранить настройки</string>
     <string name="settings_about">О приложении</string>
     <string name="common_privacy_policy">Политика конфиденциальности</string>
     <string name="common_privacy_policy_title">Политика конфиденциальности и медицинская оговорка</string>

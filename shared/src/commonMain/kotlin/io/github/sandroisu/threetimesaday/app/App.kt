@@ -13,6 +13,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.savedstate.read
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavBackStackEntry
@@ -32,6 +33,7 @@ import io.github.sandroisu.threetimesaday.feature.reminder.presentation.Reminder
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListScreen
 import io.github.sandroisu.threetimesaday.feature.reminder.presentation.ReminderListViewModel
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorScreen
+import io.github.sandroisu.threetimesaday.feature.settings.domain.StartScreen
 import io.github.sandroisu.threetimesaday.feature.settings.presentation.SettingsScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.MedicationUpcomingIntakes
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayLabels
@@ -70,6 +72,9 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
             val reminderListViewModel: ReminderListViewModel = koinViewModel()
             val launchRepository = koinInject<MedicationReminderLaunchRepository>()
             val launchHandlingScope = rememberCoroutineScope()
+            val appViewModel: AppViewModel = koinViewModel()
+            val startScreen by appViewModel.startScreen.collectAsStateWithLifecycle()
+            val startDestination = startScreen?.let(::startDestinationFor) ?: return@AppTheme
 
             LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                 reminderListViewModel.loadReminders()
@@ -103,7 +108,7 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                 },
             ) { contentPadding ->
                 Box(Modifier.padding(contentPadding)) {
-                    NavHost(navController = navController, startDestination = AppDestination.Today) {
+                    NavHost(navController = navController, startDestination = startDestination) {
                         composable(AppDestination.Today) {
                             TodayScreen(
                                 onEditScheduleClick = { navController.navigate(AppDestination.ScheduleEditor) },
@@ -193,6 +198,11 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
             }
         }
     }
+}
+
+private fun startDestinationFor(startScreen: StartScreen): String = when (startScreen) {
+    StartScreen.Reminders -> AppDestination.ReminderList
+    StartScreen.Medications -> AppDestination.Today
 }
 
 private fun androidx.navigation.NavHostController.navigateToTopLevel(route: String) {
