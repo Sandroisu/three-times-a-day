@@ -12,3 +12,11 @@ enum class ReminderWeekday(val isoDayNumber: Int) {
     Saturday(6),
     Sunday(7),
 }
+
+internal val workdayReminderWeekdays: Set<ReminderWeekday> = setOf(
+    ReminderWeekday.Monday,
+    ReminderWeekday.Tuesday,
+    ReminderWeekday.Wednesday,
+    ReminderWeekday.Thursday,
+    ReminderWeekday.Friday,
+)

@@ -7,6 +7,7 @@ import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderWeekda
 internal enum class ReminderRecurrenceType {
     Once,
     Daily,
+    Workdays,
     Weekdays,
     EveryDays,
     EveryMonths,

@@ -171,7 +171,8 @@ private fun ReminderForm(
             }
             when (uiState.recurrenceType) {
                 ReminderRecurrenceType.Once,
-                ReminderRecurrenceType.Daily -> Unit
+                ReminderRecurrenceType.Daily,
+                ReminderRecurrenceType.Workdays -> Unit
 
                 ReminderRecurrenceType.Weekdays -> {
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {

@@ -33,6 +33,7 @@
     <string name="reminder_repeat">Repeat</string>
     <string name="reminder_once">Once</string>
     <string name="reminder_daily">Every day</string>
+    <string name="reminder_workdays">Workdays</string>
     <string name="reminder_weekdays">Days of week</string>
     <string name="reminder_every_days">Every N days</string>
     <string name="reminder_monthly">Every few months</string>
@@ -50,6 +51,7 @@
     <string name="reminder_cyclic_intervals_error">Enter 1 to 32 positive intervals, each no more than 3650 days</string>
     <string name="reminder_recurrence_once">Does not repeat</string>
     <string name="reminder_recurrence_daily">Every day</string>
+    <string name="reminder_recurrence_workdays">On workdays</string>
     <string name="reminder_recurrence_weekdays">On selected weekdays</string>
     <string name="reminder_recurrence_days">Every %1$d days</string>
     <string name="reminder_recurrence_months">Every %1$d months, on day %2$d</string>

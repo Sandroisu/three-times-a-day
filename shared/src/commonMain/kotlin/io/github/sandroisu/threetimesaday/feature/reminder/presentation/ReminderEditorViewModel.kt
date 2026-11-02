@@ -14,6 +14,7 @@ import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderIdGene
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRecurrence
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRepository
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderWeekday
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.workdayReminderWeekdays
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.RescheduleRemindersUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -212,7 +213,11 @@ internal class ReminderEditorViewModel(
             ReminderRecurrence.Once -> baseState
             ReminderRecurrence.Daily -> baseState.copy(recurrenceType = ReminderRecurrenceType.Daily)
             is ReminderRecurrence.OnWeekdays -> baseState.copy(
-                recurrenceType = ReminderRecurrenceType.Weekdays,
+                recurrenceType = if (recurrence.weekdays.toSet() == workdayReminderWeekdays) {
+                    ReminderRecurrenceType.Workdays
+                } else {
+                    ReminderRecurrenceType.Weekdays
+                },
                 selectedWeekdays = recurrence.weekdays.toSet(),
             )
 
@@ -277,6 +282,9 @@ internal class ReminderEditorViewModel(
         return when (state.recurrenceType) {
             ReminderRecurrenceType.Once -> ReminderRecurrence.Once
             ReminderRecurrenceType.Daily -> ReminderRecurrence.Daily
+            ReminderRecurrenceType.Workdays -> ReminderRecurrence.OnWeekdays(
+                workdayReminderWeekdays.sortedBy { weekday -> weekday.isoDayNumber },
+            )
             ReminderRecurrenceType.Weekdays -> state.selectedWeekdays
                 .takeIf { weekdays -> weekdays.isNotEmpty() }
                 ?.sortedBy { weekday -> weekday.isoDayNumber }

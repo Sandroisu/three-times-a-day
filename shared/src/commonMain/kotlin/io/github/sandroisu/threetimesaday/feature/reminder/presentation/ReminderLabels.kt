@@ -5,6 +5,7 @@ import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRecurrence
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderWeekday
+import io.github.sandroisu.threetimesaday.feature.reminder.domain.workdayReminderWeekdays
 import kotlinx.datetime.LocalDateTime
 import threetimesaday.shared.generated.resources.Res
 import threetimesaday.shared.generated.resources.date_time
@@ -49,6 +50,7 @@ import threetimesaday.shared.generated.resources.reminder_recurrence_daily
 import threetimesaday.shared.generated.resources.reminder_recurrence_days
 import threetimesaday.shared.generated.resources.reminder_recurrence_once
 import threetimesaday.shared.generated.resources.reminder_recurrence_weekdays
+import threetimesaday.shared.generated.resources.reminder_recurrence_workdays
 import threetimesaday.shared.generated.resources.reminder_reminders
 import threetimesaday.shared.generated.resources.reminder_repeat
 import threetimesaday.shared.generated.resources.reminder_repeat_every_days
@@ -67,6 +69,7 @@ import threetimesaday.shared.generated.resources.reminder_weekday_thu
 import threetimesaday.shared.generated.resources.reminder_weekday_tue
 import threetimesaday.shared.generated.resources.reminder_weekday_wed
 import threetimesaday.shared.generated.resources.reminder_weekdays
+import threetimesaday.shared.generated.resources.reminder_workdays
 import threetimesaday.shared.generated.resources.reminder_weekdays_error
 
 internal object ReminderLabels {
@@ -83,6 +86,8 @@ internal object ReminderLabels {
     val repeat = UiText(Res.string.reminder_repeat)
     val once = UiText(Res.string.reminder_once)
     val daily = UiText(Res.string.reminder_daily)
+    val workdays = UiText(Res.string.reminder_workdays)
+    val workdaysRecurrence = UiText(Res.string.reminder_recurrence_workdays)
     val weekdays = UiText(Res.string.reminder_weekdays)
     val everyDays = UiText(Res.string.reminder_every_days)
     val monthly = UiText(Res.string.reminder_monthly)
@@ -121,7 +126,11 @@ internal object ReminderLabels {
 internal fun reminderRecurrenceLabel(recurrence: ReminderRecurrence): UiText = when (recurrence) {
     ReminderRecurrence.Once -> UiText(Res.string.reminder_recurrence_once)
     ReminderRecurrence.Daily -> UiText(Res.string.reminder_recurrence_daily)
-    is ReminderRecurrence.OnWeekdays -> UiText(Res.string.reminder_recurrence_weekdays)
+    is ReminderRecurrence.OnWeekdays -> if (recurrence.weekdays.toSet() == workdayReminderWeekdays) {
+        ReminderLabels.workdaysRecurrence
+    } else {
+        UiText(Res.string.reminder_recurrence_weekdays)
+    }
     is ReminderRecurrence.EveryDays -> UiText(Res.string.reminder_recurrence_days, listOf(recurrence.intervalDays))
     is ReminderRecurrence.EveryMonthsOnDay -> UiText(
         Res.string.reminder_recurrence_months,
@@ -137,6 +146,7 @@ internal fun reminderRecurrenceLabel(recurrence: ReminderRecurrence): UiText = w
 internal fun reminderRecurrenceTypeLabel(recurrenceType: ReminderRecurrenceType): UiText = when (recurrenceType) {
     ReminderRecurrenceType.Once -> ReminderLabels.once
     ReminderRecurrenceType.Daily -> ReminderLabels.daily
+    ReminderRecurrenceType.Workdays -> ReminderLabels.workdays
     ReminderRecurrenceType.Weekdays -> ReminderLabels.weekdays
     ReminderRecurrenceType.EveryDays -> ReminderLabels.everyDays
     ReminderRecurrenceType.EveryMonths -> ReminderLabels.monthly
