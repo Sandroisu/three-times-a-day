@@ -2,13 +2,10 @@ package io.github.sandroisu.threetimesaday.core.ui
 
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimeInput
-import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,7 +17,6 @@ import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.core.time.parseTimeOfDay
 import kotlinx.datetime.LocalTime
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun TimeInputField(
     label: String,
@@ -43,19 +39,23 @@ internal fun TimeInputField(
         },
     )
     if (isPickerVisible) {
-        val selectedTime = parseTimeOfDay(value)
-        val pickerState = rememberTimePickerState(
-            initialHour = selectedTime?.hour ?: 8,
-            initialMinute = selectedTime?.minute ?: 0,
-            is24Hour = true,
-        )
+        val initialTime = parseTimeOfDay(value) ?: LocalTime(DEFAULT_PICKER_HOUR, 0)
+        var selectedHour by remember { mutableStateOf(initialTime.hour) }
+        var selectedMinute by remember { mutableStateOf(initialTime.minute) }
         AlertDialog(
             onDismissRequest = { isPickerVisible = false },
             title = { Text(label) },
-            text = { TimeInput(state = pickerState) },
+            text = {
+                WheelTimePicker(
+                    hour = selectedHour,
+                    minute = selectedMinute,
+                    onHourChange = { hour -> selectedHour = hour },
+                    onMinuteChange = { minute -> selectedMinute = minute },
+                )
+            },
             confirmButton = {
                 TextButton(onClick = {
-                    onValueChange(formatTimeOfDay(LocalTime(pickerState.hour, pickerState.minute)))
+                    onValueChange(formatTimeOfDay(LocalTime(selectedHour, selectedMinute)))
                     isPickerVisible = false
                 }) { Text(UiLabels.confirm.asString()) }
             },
@@ -65,3 +65,5 @@ internal fun TimeInputField(
         )
     }
 }
+
+private const val DEFAULT_PICKER_HOUR = 8
