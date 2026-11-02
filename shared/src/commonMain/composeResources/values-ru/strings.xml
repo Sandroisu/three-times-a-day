@@ -2,6 +2,7 @@
 <resources>
     <string name="common_time_hint">Часы и минуты, например 08:30</string>
     <string name="common_date_hint">Дата в формате ДД.ММ.ГГГГ</string>
+    <string name="common_choose_date">Выбрать дату</string>
     <string name="common_choose_time">Выберите время</string>
     <string name="common_confirm">Готово</string>
     <string name="common_cancel">Отмена</string>

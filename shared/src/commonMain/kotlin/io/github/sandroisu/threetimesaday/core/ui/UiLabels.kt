@@ -3,6 +3,7 @@ package io.github.sandroisu.threetimesaday.core.ui
 import threetimesaday.shared.generated.resources.Res
 import threetimesaday.shared.generated.resources.common_back
 import threetimesaday.shared.generated.resources.common_cancel
+import threetimesaday.shared.generated.resources.common_choose_date
 import threetimesaday.shared.generated.resources.common_choose_time
 import threetimesaday.shared.generated.resources.common_confirm
 import threetimesaday.shared.generated.resources.common_date_error
@@ -20,6 +21,7 @@ internal object UiLabels {
     val save = UiText(Res.string.common_save)
     val cancel = UiText(Res.string.common_cancel)
     val confirm = UiText(Res.string.common_confirm)
+    val chooseDate = UiText(Res.string.common_choose_date)
     val chooseTime = UiText(Res.string.common_choose_time)
     val timeHint = UiText(Res.string.common_time_hint)
     val timeError = UiText(Res.string.common_time_error)

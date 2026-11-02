@@ -47,4 +47,25 @@ class LocalDateTimeArithmeticTest {
             plusMinutes(LocalDateTime(LocalDate(2027, 2, 28), LocalTime(23, 30)), 1440)
         )
     }
+
+    @Test
+    fun pickerMillisRoundTripKeepsDate() {
+        val date = LocalDate(2026, 11, 2)
+
+        assertEquals(date, dateFromUtcEpochMillis(utcEpochMillisOf(date)))
+    }
+
+    @Test
+    fun pickerMillisInsideDayMapToThatDay() {
+        val lateEvening = utcEpochMillisOf(LocalDate(2026, 2, 28)) + 23 * 60 * 60 * 1000L
+
+        assertEquals(LocalDate(2026, 2, 28), dateFromUtcEpochMillis(lateEvening))
+    }
+
+    @Test
+    fun pickerMillisBeforeEpochMapToRightDay() {
+        val date = LocalDate(1969, 12, 31)
+
+        assertEquals(date, dateFromUtcEpochMillis(utcEpochMillisOf(date) + 1))
+    }
 }

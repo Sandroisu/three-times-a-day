@@ -1,6 +1,7 @@
 package io.github.sandroisu.threetimesaday.core.time
 
 import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.plus
@@ -13,5 +14,12 @@ fun plusMinutes(dateTime: LocalDateTime, minutes: Int): LocalDateTime {
     return LocalDateTime(shiftedDate, LocalTime.fromSecondOfDay(secondOfDay))
 }
 
+// Material date pickers keep the chosen day as UTC midnight in epoch millis.
+internal fun utcEpochMillisOf(date: LocalDate): Long = date.toEpochDays() * MILLIS_IN_DAY
+
+internal fun dateFromUtcEpochMillis(epochMillis: Long): LocalDate =
+    LocalDate.fromEpochDays(epochMillis.floorDiv(MILLIS_IN_DAY))
+
 private const val SECONDS_IN_MINUTE = 60
 private const val SECONDS_IN_DAY = 24 * 60 * 60
+private const val MILLIS_IN_DAY = SECONDS_IN_DAY * 1000L

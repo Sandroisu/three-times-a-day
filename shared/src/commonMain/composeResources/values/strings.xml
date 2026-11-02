@@ -2,6 +2,7 @@
 <resources>
     <string name="common_time_hint">Hours and minutes, for example 08:30</string>
     <string name="common_date_hint">Date in DD.MM.YYYY format</string>
+    <string name="common_choose_date">Choose date</string>
     <string name="common_choose_time">Choose time</string>
     <string name="common_confirm">Done</string>
     <string name="common_cancel">Cancel</string>
