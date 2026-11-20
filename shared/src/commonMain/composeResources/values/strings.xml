@@ -217,4 +217,21 @@
     <string name="month_10">October</string>
     <string name="month_11">November</string>
     <string name="month_12">December</string>
+    <string name="intake_history_title">Intake history</string>
+    <string name="intake_history_period_7">7 days</string>
+    <string name="intake_history_period_30">30 days</string>
+    <string name="intake_history_adherence">Doses taken</string>
+    <string name="intake_history_percent">%1$d%</string>
+    <string name="intake_history_no_data">No data</string>
+    <string name="intake_history_no_data_hint">No doses were due in this period</string>
+    <string name="intake_history_by_medication">By medication</string>
+    <string name="intake_history_by_day">By day</string>
+    <string name="intake_history_day_taken">Taken: %1$d</string>
+    <string name="intake_history_day_skipped">Skipped: %1$d</string>
+    <string name="intake_history_day_missed">Not marked: %1$d</string>
+    <string name="intake_history_day_pending">Upcoming: %1$d</string>
+    <string name="intake_history_day_empty">No intakes</string>
+    <string name="intake_history_empty_title">No medications yet</string>
+    <string name="intake_history_empty_message">Add a medication to see how doses were taken.</string>
+    <string name="intake_history_load_error">Could not load the intake history.</string>
 </resources>

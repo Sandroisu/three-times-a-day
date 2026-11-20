@@ -217,4 +217,21 @@
     <string name="month_10">октября</string>
     <string name="month_11">ноября</string>
     <string name="month_12">декабря</string>
+    <string name="intake_history_title">История приёма</string>
+    <string name="intake_history_period_7">7 дней</string>
+    <string name="intake_history_period_30">30 дней</string>
+    <string name="intake_history_adherence">Принято доз</string>
+    <string name="intake_history_percent">%1$d%</string>
+    <string name="intake_history_no_data">Нет данных</string>
+    <string name="intake_history_no_data_hint">За этот период приёмов не было</string>
+    <string name="intake_history_by_medication">По препаратам</string>
+    <string name="intake_history_by_day">По дням</string>
+    <string name="intake_history_day_taken">Принято: %1$d</string>
+    <string name="intake_history_day_skipped">Пропущено: %1$d</string>
+    <string name="intake_history_day_missed">Не отмечено: %1$d</string>
+    <string name="intake_history_day_pending">Предстоит: %1$d</string>
+    <string name="intake_history_day_empty">Приёмов нет</string>
+    <string name="intake_history_empty_title">Препаратов пока нет</string>
+    <string name="intake_history_empty_message">Добавьте препарат, чтобы видеть, как принимались дозы.</string>
+    <string name="intake_history_load_error">Не удалось загрузить историю приёма.</string>
 </resources>
