@@ -47,8 +47,21 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    val uploadStoreFile = localProperties.getProperty("signing.storeFile")
+    val uploadSigningConfig = if (uploadStoreFile != null) {
+        signingConfigs.create("upload") {
+            storeFile = rootProject.file(uploadStoreFile)
+            storePassword = localProperties.getProperty("signing.storePassword")
+            keyAlias = localProperties.getProperty("signing.keyAlias")
+            keyPassword = localProperties.getProperty("signing.keyPassword")
+        }
+    } else {
+        null
+    }
     buildTypes {
         getByName("release") {
+            // Without local signing values the release stays unsigned, as Android Studio expects.
+            signingConfig = uploadSigningConfig
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
