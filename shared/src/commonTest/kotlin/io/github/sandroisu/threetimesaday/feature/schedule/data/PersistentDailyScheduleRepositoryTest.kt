@@ -1,16 +1,16 @@
 package io.github.sandroisu.threetimesaday.feature.schedule.data
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalTime
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class PersistentDailyScheduleRepositoryTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = storageJson
 
     @Test
     fun returnsDefaultScheduleWhenNothingStored() = runTest {

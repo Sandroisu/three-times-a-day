@@ -1,6 +1,7 @@
 package io.github.sandroisu.threetimesaday.feature.medication.data
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
@@ -8,14 +9,13 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRe
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PersistentMedicationRepositoryTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = storageJson
 
     @Test
     fun returnsEmptyListWhenNothingStored() = runTest {

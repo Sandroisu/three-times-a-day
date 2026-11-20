@@ -1,15 +1,15 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class PersistentMedicationReminderLaunchRepositoryTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = storageJson
     private val launchDataKey = "medication_reminder_launch_data"
     private val launchData = MedicationReminderLaunchData(
         notificationId = "medication-reminder|wake-event",

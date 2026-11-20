@@ -6,6 +6,7 @@ import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderLa
 import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderRegistry
 import io.github.sandroisu.threetimesaday.core.notification.PersistentMedicationReminderLaunchRepository
 import io.github.sandroisu.threetimesaday.core.notification.PersistentMedicationReminderRegistry
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import io.github.sandroisu.threetimesaday.core.time.SystemTimeProvider
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.feature.medication.data.IncrementingMedicationIdGenerator
@@ -42,12 +43,7 @@ import org.koin.dsl.module
 
 val commonAppModule = module {
     single { HttpClientFactory.create() }
-    single {
-        Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-        }
-    }
+    single<Json> { storageJson }
     single<TimeProvider> { SystemTimeProvider() }
     single<MedicationReminderRegistry> { PersistentMedicationReminderRegistry(get(), get()) }
     single<MedicationReminderLaunchRepository> { PersistentMedicationReminderLaunchRepository(get(), get()) }

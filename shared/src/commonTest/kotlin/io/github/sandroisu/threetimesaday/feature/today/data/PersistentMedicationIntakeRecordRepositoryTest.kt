@@ -1,20 +1,20 @@
 package io.github.sandroisu.threetimesaday.feature.today.data
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PersistentMedicationIntakeRecordRepositoryTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = storageJson
     private val firstDate = LocalDate(2026, 7, 4)
     private val secondDate = LocalDate(2026, 7, 5)
 

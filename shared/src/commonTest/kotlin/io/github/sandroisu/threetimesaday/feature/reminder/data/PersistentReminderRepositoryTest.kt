@@ -1,20 +1,20 @@
 package io.github.sandroisu.threetimesaday.feature.reminder.data
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.Reminder
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderAlertMode
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRecurrence
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PersistentReminderRepositoryTest {
 
-    private val json = Json { ignoreUnknownKeys = true }
+    private val json = storageJson
 
     @Test
     fun savedReminderSurvivesRepositoryRecreation() = runTest {
