@@ -26,6 +26,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReminderListViewModelTest {
@@ -40,6 +41,7 @@ class ReminderListViewModelTest {
         recurrence = ReminderRecurrence.Daily,
         isEnabled = false,
     )
+    private val earlyActiveReminder = earlyPausedReminder.copy(isEnabled = true)
     private val lateActiveReminder = Reminder(
         id = "water",
         title = "Water plants",
@@ -71,6 +73,60 @@ class ReminderListViewModelTest {
         assertFalse(pausedItem.isEnabled)
         assertNull(pausedItem.nextOccurrence)
         assertEquals(ReminderLabels.paused, pausedItem.nextOccurrenceText)
+    }
+
+    @Test
+    fun pausingReminderPersistsItAndRemovesItsNotifications() = runTest(testDispatcher) {
+        val repository = FakeReminderRepository(earlyActiveReminder, lateActiveReminder)
+        val scheduler = FakeScheduler()
+        val viewModel = createViewModel(repository, scheduler)
+        viewModel.loadReminders()
+        advanceUntilIdle()
+
+        viewModel.onReminderEnabledChanged(reminderId = "gym", isEnabled = false)
+        advanceUntilIdle()
+
+        assertFalse(repository.reminders.first { reminder -> reminder.id == "gym" }.isEnabled)
+        assertTrue(scheduler.scheduledNotificationIds.none { notificationId -> "gym" in notificationId })
+        assertTrue(scheduler.scheduledNotificationIds.any { notificationId -> "water" in notificationId })
+        val reminders = viewModel.uiState.value.reminders
+        assertEquals(listOf("water", "gym"), reminders.map { reminder -> reminder.id })
+        assertEquals(ReminderLabels.paused, reminders.last().nextOccurrenceText)
+    }
+
+    @Test
+    fun resumingReminderPersistsItAndSchedulesItAgain() = runTest(testDispatcher) {
+        val repository = FakeReminderRepository(earlyPausedReminder, lateActiveReminder)
+        val scheduler = FakeScheduler()
+        val viewModel = createViewModel(repository, scheduler)
+        viewModel.loadReminders()
+        advanceUntilIdle()
+
+        viewModel.onReminderEnabledChanged(reminderId = "gym", isEnabled = true)
+        advanceUntilIdle()
+
+        assertTrue(repository.reminders.first { reminder -> reminder.id == "gym" }.isEnabled)
+        assertTrue(scheduler.scheduledNotificationIds.any { notificationId -> "gym" in notificationId })
+        val firstItem = viewModel.uiState.value.reminders.first()
+        assertEquals("gym", firstItem.id)
+        assertTrue(firstItem.isEnabled)
+    }
+
+    @Test
+    fun failedPauseShowsErrorAndKeepsReminderActive() = runTest(testDispatcher) {
+        val repository = FakeReminderRepository(earlyActiveReminder, lateActiveReminder)
+        val scheduler = FakeScheduler()
+        val viewModel = createViewModel(repository, scheduler)
+        viewModel.loadReminders()
+        advanceUntilIdle()
+        repository.failOnUpdate = true
+
+        viewModel.onReminderEnabledChanged(reminderId = "gym", isEnabled = false)
+        advanceUntilIdle()
+
+        assertEquals(ReminderLabels.toggleError, viewModel.uiState.value.toggleErrorMessage)
+        assertTrue(viewModel.uiState.value.reminders.first { reminder -> reminder.id == "gym" }.isEnabled)
+        assertTrue(scheduler.scheduledNotificationIds.any { notificationId -> "gym" in notificationId })
     }
 
     private fun createViewModel(

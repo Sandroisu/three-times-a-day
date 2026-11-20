@@ -48,6 +48,29 @@ internal class ReminderListViewModel(
         }
     }
 
+    fun onReminderEnabledChanged(reminderId: String, isEnabled: Boolean) {
+        viewModelScope.launch {
+            mutableUiState.update { state -> state.copy(toggleErrorMessage = null) }
+            try {
+                val storedReminder = reminderRepository.getReminders()
+                    .firstOrNull { reminder -> reminder.id == reminderId }
+                // The reminder may be deleted in the editor while the list still shows it.
+                // Updating it would add it back, so only refresh the list then.
+                if (storedReminder != null) {
+                    reminderRepository.updateReminder(storedReminder.copy(isEnabled = isEnabled))
+                }
+                val reminders = readListItems()
+                mutableUiState.update { state -> state.copy(reminders = reminders) }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (toggleFailure: Exception) {
+                mutableUiState.update { state -> state.copy(toggleErrorMessage = ReminderLabels.toggleError) }
+                return@launch
+            }
+            refreshNotificationState()
+        }
+    }
+
     fun requestNotificationPermission() {
         viewModelScope.launch {
             try {

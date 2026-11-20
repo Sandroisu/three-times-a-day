@@ -71,6 +71,7 @@
     <string name="reminder_weekday_sun">Sun</string>
     <string name="reminder_next">Next: %1$s</string>
     <string name="reminder_paused">Paused</string>
+    <string name="reminder_enabled">Reminder on</string>
     <string name="reminder_delete">Delete reminder</string>
     <string name="reminder_delete_title">Delete reminder?</string>
     <string name="reminder_delete_message">The reminder and its notification will be deleted. This cannot be undone.</string>
@@ -78,6 +79,7 @@
     <string name="reminder_load_error">Could not load reminder</string>
     <string name="reminder_save_error">Could not save reminder</string>
     <string name="reminder_delete_error">Could not delete reminder</string>
+    <string name="reminder_toggle_error">Could not change reminder</string>
     <string name="reminder_not_found">Reminder not found</string>
     <string name="reminder_notification_message">Your reminder</string>
     <string name="reminder_notification_error">Could not schedule reminders. Check notification and exact alarm permissions.</string>

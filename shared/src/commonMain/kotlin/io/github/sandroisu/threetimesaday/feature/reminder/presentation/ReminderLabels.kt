@@ -29,6 +29,7 @@ import threetimesaday.shared.generated.resources.reminder_delete_error
 import threetimesaday.shared.generated.resources.reminder_delete_message
 import threetimesaday.shared.generated.resources.reminder_delete_title
 import threetimesaday.shared.generated.resources.reminder_edit
+import threetimesaday.shared.generated.resources.reminder_enabled
 import threetimesaday.shared.generated.resources.reminder_every_days
 import threetimesaday.shared.generated.resources.reminder_exact_reminders
 import threetimesaday.shared.generated.resources.reminder_exact_reminders_action
@@ -62,6 +63,7 @@ import threetimesaday.shared.generated.resources.reminder_short_month_hint
 import threetimesaday.shared.generated.resources.reminder_time
 import threetimesaday.shared.generated.resources.reminder_title
 import threetimesaday.shared.generated.resources.reminder_title_error
+import threetimesaday.shared.generated.resources.reminder_toggle_error
 import threetimesaday.shared.generated.resources.reminder_weekday_fri
 import threetimesaday.shared.generated.resources.reminder_weekday_mon
 import threetimesaday.shared.generated.resources.reminder_weekday_sat
@@ -119,6 +121,8 @@ internal object ReminderLabels {
     val deleteError = UiText(Res.string.reminder_delete_error)
     val notFound = UiText(Res.string.reminder_not_found)
     val paused = UiText(Res.string.reminder_paused)
+    val enabled = UiText(Res.string.reminder_enabled)
+    val toggleError = UiText(Res.string.reminder_toggle_error)
     val notificationMessage = UiText(Res.string.reminder_notification_message)
     val notificationError = UiText(Res.string.reminder_notification_error)
     val exactReminders = UiText(Res.string.reminder_exact_reminders)

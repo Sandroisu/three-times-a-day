@@ -17,6 +17,7 @@ internal data class ReminderListUiState(
     val isLoading: Boolean = false,
     val reminders: List<ReminderListItemUiModel> = emptyList(),
     val errorMessage: UiText? = null,
+    val toggleErrorMessage: UiText? = null,
     val notificationPermissionStatus: NotificationPermissionStatus = NotificationPermissionStatus.NotDetermined,
     val exactRemindersAllowed: Boolean = true,
     val notificationErrorMessage: UiText? = null,

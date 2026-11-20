@@ -71,6 +71,7 @@
     <string name="reminder_weekday_sun">Вс</string>
     <string name="reminder_next">Ближайшее: %1$s</string>
     <string name="reminder_paused">На паузе</string>
+    <string name="reminder_enabled">Напоминание включено</string>
     <string name="reminder_delete">Удалить напоминание</string>
     <string name="reminder_delete_title">Удалить напоминание?</string>
     <string name="reminder_delete_message">Напоминание и его уведомление будут удалены. Это действие нельзя отменить.</string>
@@ -78,6 +79,7 @@
     <string name="reminder_load_error">Не удалось загрузить напоминание</string>
     <string name="reminder_save_error">Не удалось сохранить напоминание</string>
     <string name="reminder_delete_error">Не удалось удалить напоминание</string>
+    <string name="reminder_toggle_error">Не удалось изменить напоминание</string>
     <string name="reminder_not_found">Напоминание не найдено</string>
     <string name="reminder_notification_message">Напоминание</string>
     <string name="reminder_notification_error">Не удалось запланировать напоминания. Проверьте разрешения на уведомления и точные будильники.</string>

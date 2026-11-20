@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,6 +22,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -83,6 +86,11 @@ internal fun ReminderListScreen(
                     }
                 }
             }
+            uiState.toggleErrorMessage?.let { toggleError ->
+                item(key = "toggle-error") {
+                    Notice(toggleError.asString(), isError = true)
+                }
+            }
             uiState.notificationErrorMessage?.let { notificationError ->
                 item(key = "notification-error") {
                     Notice(notificationError.asString(), isError = true)
@@ -99,7 +107,13 @@ internal fun ReminderListScreen(
                     }
                 }
                 else -> items(uiState.reminders, key = { reminder -> reminder.id }) { reminder ->
-                    ReminderListItemCard(reminder) { onReminderClick(reminder.id) }
+                    ReminderListItemCard(
+                        reminder = reminder,
+                        onClick = { onReminderClick(reminder.id) },
+                        onEnabledChange = { isEnabled ->
+                            reminderListViewModel.onReminderEnabledChanged(reminder.id, isEnabled)
+                        },
+                    )
                 }
             }
         }
@@ -110,7 +124,12 @@ internal fun ReminderListScreen(
 }
 
 @Composable
-private fun ReminderListItemCard(reminder: ReminderListItemUiModel, onClick: () -> Unit) {
+private fun ReminderListItemCard(
+    reminder: ReminderListItemUiModel,
+    onClick: () -> Unit,
+    onEnabledChange: (Boolean) -> Unit,
+) {
+    val enabledSwitchDescription = ReminderLabels.enabled.asString()
     Surface(onClick = onClick, shape = MaterialTheme.shapes.medium, modifier = Modifier.fillMaxWidth()) {
         Row(
             Modifier.padding(AppSpacing.standard),
@@ -131,6 +150,11 @@ private fun ReminderListItemCard(reminder: ReminderListItemUiModel, onClick: () 
                     )
                 }
             }
+            Switch(
+                checked = reminder.isEnabled,
+                onCheckedChange = onEnabledChange,
+                modifier = Modifier.semantics { contentDescription = enabledSwitchDescription },
+            )
             Icon(AppIcons.Chevron, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
     }
