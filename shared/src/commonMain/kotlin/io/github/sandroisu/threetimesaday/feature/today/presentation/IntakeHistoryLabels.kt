@@ -19,6 +19,7 @@ import threetimesaday.shared.generated.resources.intake_history_empty_title
 import threetimesaday.shared.generated.resources.intake_history_load_error
 import threetimesaday.shared.generated.resources.intake_history_no_data
 import threetimesaday.shared.generated.resources.intake_history_no_data_hint
+import threetimesaday.shared.generated.resources.intake_history_open
 import threetimesaday.shared.generated.resources.intake_history_percent
 import threetimesaday.shared.generated.resources.intake_history_period_30
 import threetimesaday.shared.generated.resources.intake_history_period_7
@@ -26,6 +27,7 @@ import threetimesaday.shared.generated.resources.intake_history_title
 
 internal object IntakeHistoryLabels {
     val title = UiText(Res.string.intake_history_title)
+    val open = UiText(Res.string.intake_history_open)
     val adherence = UiText(Res.string.intake_history_adherence)
     val byMedication = UiText(Res.string.intake_history_by_medication)
     val byDay = UiText(Res.string.intake_history_by_day)

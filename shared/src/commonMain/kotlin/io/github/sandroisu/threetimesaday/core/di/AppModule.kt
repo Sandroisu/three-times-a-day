@@ -32,11 +32,13 @@ import io.github.sandroisu.threetimesaday.feature.settings.domain.StartScreenRep
 import io.github.sandroisu.threetimesaday.feature.settings.presentation.SettingsViewModel
 import io.github.sandroisu.threetimesaday.feature.today.data.PersistentMedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.BuildIntakeHistoryUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.BuildMedicationIntakeRecordUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.ChangeMedicationIntakeStatusUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.RescheduleMedicationRemindersUseCase
+import io.github.sandroisu.threetimesaday.feature.today.presentation.IntakeHistoryViewModel
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayViewModel
 import io.github.sandroisu.threetimesaday.feature.today.presentation.intakeMomentLabel
 import kotlinx.serialization.json.Json
@@ -60,6 +62,16 @@ val commonAppModule = module {
     single { ApplyMedicationIntakeRecordsUseCase() }
     single { ChangeMedicationIntakeStatusUseCase(get(), get()) }
     single { BuildMedicationIntakeRecordUseCase(get()) }
+    single {
+        BuildIntakeHistoryUseCase(
+            timeProvider = get(),
+            dailyScheduleRepository = get(),
+            medicationRepository = get(),
+            medicationIntakeRecordRepository = get(),
+            generateMedicationIntakeEventsForDate = get(),
+            applyMedicationIntakeRecords = get(),
+        )
+    }
     single { FindNextReminderDateTimeUseCase() }
     single {
         RescheduleMedicationRemindersUseCase(
@@ -85,6 +97,7 @@ val commonAppModule = module {
         )
     }
     viewModelOf(::TodayViewModel)
+    viewModelOf(::IntakeHistoryViewModel)
     viewModelOf(::ScheduleEditorViewModel)
     viewModelOf(::MedicationListViewModel)
     viewModelOf(::MedicationEditorViewModel)

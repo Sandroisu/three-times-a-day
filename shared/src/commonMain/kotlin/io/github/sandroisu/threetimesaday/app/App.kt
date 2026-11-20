@@ -35,6 +35,7 @@ import io.github.sandroisu.threetimesaday.feature.reminder.presentation.Reminder
 import io.github.sandroisu.threetimesaday.feature.schedule.presentation.ScheduleEditorScreen
 import io.github.sandroisu.threetimesaday.feature.settings.domain.StartScreen
 import io.github.sandroisu.threetimesaday.feature.settings.presentation.SettingsScreen
+import io.github.sandroisu.threetimesaday.feature.today.presentation.IntakeHistoryScreen
 import io.github.sandroisu.threetimesaday.feature.today.presentation.MedicationUpcomingIntakes
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayLabels
 import io.github.sandroisu.threetimesaday.feature.today.presentation.TodayScreen
@@ -56,6 +57,7 @@ private object AppDestination {
     const val NewReminder = "reminder/new"
     const val ReminderEditor = "reminder/{reminderId}"
     const val Settings = "settings"
+    const val IntakeHistory = "intake-history"
 }
 
 @Composable
@@ -114,6 +116,7 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                                 onEditScheduleClick = { navController.navigate(AppDestination.ScheduleEditor) },
                                 onEditMedicationsClick = { navController.navigate(AppDestination.MedicationList) },
                                 onSettingsClick = { navController.navigate(AppDestination.Settings) },
+                                onIntakeHistoryClick = { navController.navigate(AppDestination.IntakeHistory) },
                                 todayViewModel = todayViewModel,
                             )
                         }
@@ -192,6 +195,9 @@ fun App(keyValueStorage: KeyValueStorage, platformModule: Module) {
                         }
                         composable(AppDestination.Settings) {
                             SettingsScreen(onBackClick = { navController.popBackStack() })
+                        }
+                        composable(AppDestination.IntakeHistory) {
+                            IntakeHistoryScreen(onBackClick = { navController.popBackStack() })
                         }
                     }
                 }

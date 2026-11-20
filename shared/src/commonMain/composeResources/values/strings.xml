@@ -217,6 +217,7 @@
     <string name="month_10">October</string>
     <string name="month_11">November</string>
     <string name="month_12">December</string>
+    <string name="intake_history_open">History</string>
     <string name="intake_history_title">Intake history</string>
     <string name="intake_history_period_7">7 days</string>
     <string name="intake_history_period_30">30 days</string>

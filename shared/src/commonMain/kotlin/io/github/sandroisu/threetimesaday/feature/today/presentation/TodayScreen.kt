@@ -53,6 +53,7 @@ internal fun TodayScreen(
     onEditScheduleClick: () -> Unit,
     onEditMedicationsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onIntakeHistoryClick: () -> Unit,
     todayViewModel: TodayViewModel = koinViewModel(),
 ) {
     val uiState by todayViewModel.uiState.collectAsStateWithLifecycle()
@@ -70,6 +71,7 @@ internal fun TodayScreen(
         onOpenSettingsClick = todayViewModel::openNotificationSettings,
         onOpenExactReminderSettingsClick = todayViewModel::openExactReminderSettings,
         onSettingsClick = onSettingsClick,
+        onIntakeHistoryClick = onIntakeHistoryClick,
         onRetry = todayViewModel::loadToday,
     )
 }
@@ -100,6 +102,7 @@ internal fun TodayContent(
     onOpenSettingsClick: () -> Unit,
     onOpenExactReminderSettingsClick: () -> Unit,
     onSettingsClick: () -> Unit,
+    onIntakeHistoryClick: () -> Unit,
     onRetry: () -> Unit,
 ) {
     val listState = rememberLazyListState()
@@ -146,6 +149,10 @@ internal fun TodayContent(
                     OutlinedButton(onClick = onEditScheduleClick, modifier = Modifier.weight(1f)) {
                         Text(TodayLabels.schedule.asString())
                     }
+                }
+                OutlinedButton(onClick = onIntakeHistoryClick, modifier = Modifier.fillMaxWidth()) {
+                    Icon(AppIcons.Calendar, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Text(IntakeHistoryLabels.open.asString(), modifier = Modifier.padding(start = AppSpacing.compact))
                 }
             }
         }

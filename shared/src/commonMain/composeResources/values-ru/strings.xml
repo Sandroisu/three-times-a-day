@@ -217,6 +217,7 @@
     <string name="month_10">октября</string>
     <string name="month_11">ноября</string>
     <string name="month_12">декабря</string>
+    <string name="intake_history_open">История</string>
     <string name="intake_history_title">История приёма</string>
     <string name="intake_history_period_7">7 дней</string>
     <string name="intake_history_period_30">30 дней</string>
