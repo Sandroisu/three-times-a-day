@@ -9,6 +9,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.presentation.medica
 import kotlinx.datetime.LocalDateTime
 import threetimesaday.shared.generated.resources.Res
 import threetimesaday.shared.generated.resources.date_time
+import threetimesaday.shared.generated.resources.intake_low_stock
 import threetimesaday.shared.generated.resources.intake_by_schedule
 import threetimesaday.shared.generated.resources.intake_description
 import threetimesaday.shared.generated.resources.intake_due
@@ -85,6 +86,8 @@ internal object TodayLabels {
     val saveError = UiText(Res.string.today_save_error)
     val notificationError = UiText(Res.string.today_notification_error)
 }
+
+internal fun intakeLowStockLabel(dosesLeft: Int): UiText = UiText(Res.string.intake_low_stock, listOf(dosesLeft))
 
 internal fun intakeProgressLabel(takenCount: Int, totalCount: Int): UiText = UiText(Res.string.intake_progress, listOf(takenCount, totalCount))
 

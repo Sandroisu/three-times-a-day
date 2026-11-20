@@ -30,6 +30,7 @@ import io.github.sandroisu.threetimesaday.core.ui.Notice
 import io.github.sandroisu.threetimesaday.core.ui.PrimaryActionButton
 import io.github.sandroisu.threetimesaday.core.ui.ScreenHeader
 import io.github.sandroisu.threetimesaday.core.ui.SectionHeader
+import io.github.sandroisu.threetimesaday.core.ui.WarningLabel
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
@@ -87,6 +88,10 @@ private fun MedicationListItemCard(medication: MedicationListItemUiModel, onClic
                 medication.courseLabel?.let { label ->
                     Text(label.asString(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                 }
+                medication.dosesLeftLabel?.let { label ->
+                    Text(label.asString(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                medication.lowStockWarning?.let { warning -> WarningLabel(warning.asString()) }
             }
             Icon(AppIcons.Chevron, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }

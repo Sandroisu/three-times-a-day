@@ -279,6 +279,22 @@ class TodayViewModelTest {
     }
 
     @Test
+    fun takingDoseThatMakesStockLowShowsWarningOnIntake() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp).copy(dosesLeft = 3))
+        )
+        val viewModel = createViewModel(FakeDailyScheduleRepository(createSchedule()), medicationRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+        assertNull(viewModel.uiState.value.intakeGroups.single().intakes.single().lowStockWarning)
+
+        viewModel.markIntakeTaken(eventId)
+        advanceUntilIdle()
+
+        assertEquals(intakeLowStockLabel(2), viewModel.uiState.value.intakeGroups.single().intakes.single().lowStockWarning)
+    }
+
+    @Test
     fun markIntakeSkippedAfterTakenGivesDoseBack() = runTest(testDispatcher) {
         val medicationRepository = FakeMedicationRepository(
             listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp).copy(dosesLeft = 7))

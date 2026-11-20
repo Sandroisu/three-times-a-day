@@ -151,3 +151,11 @@ internal fun IconLabel(
         Text(text, style = MaterialTheme.typography.bodyMedium)
     }
 }
+
+@Composable
+internal fun WarningLabel(text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
+        Icon(AppIcons.Warning, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.error)
+    }
+}

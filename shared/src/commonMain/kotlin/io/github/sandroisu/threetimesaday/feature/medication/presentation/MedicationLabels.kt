@@ -28,6 +28,7 @@ import threetimesaday.shared.generated.resources.medication_dosage
 import threetimesaday.shared.generated.resources.medication_dosage_error
 import threetimesaday.shared.generated.resources.medication_dosage_hint
 import threetimesaday.shared.generated.resources.medication_doses_left
+import threetimesaday.shared.generated.resources.medication_doses_left_count
 import threetimesaday.shared.generated.resources.medication_doses_left_error
 import threetimesaday.shared.generated.resources.medication_doses_left_hint
 import threetimesaday.shared.generated.resources.medication_edit
@@ -40,6 +41,7 @@ import threetimesaday.shared.generated.resources.medication_end_date_error
 import threetimesaday.shared.generated.resources.medication_list_error
 import threetimesaday.shared.generated.resources.medication_list_subtitle
 import threetimesaday.shared.generated.resources.medication_load_error
+import threetimesaday.shared.generated.resources.medication_low_stock
 import threetimesaday.shared.generated.resources.medication_medications
 import threetimesaday.shared.generated.resources.medication_name
 import threetimesaday.shared.generated.resources.medication_name_error
@@ -130,7 +132,11 @@ internal object MedicationLabels {
     val nameError = UiText(Res.string.medication_name_error)
     val dosageError = UiText(Res.string.medication_dosage_error)
     val listError = UiText(Res.string.medication_list_error)
+    val lowStock = UiText(Res.string.medication_low_stock)
 }
+
+internal fun medicationDosesLeftLabel(dosesLeft: Int): UiText =
+    UiText(Res.string.medication_doses_left_count, listOf(dosesLeft))
 
 internal fun medicationCourseScheduleLabel(medication: Medication): UiText {
     val start = formatScreenDate(medication.courseStartDate)

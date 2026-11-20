@@ -7,7 +7,9 @@ internal data class MedicationListItemUiModel(
     val dosageText: String,
     val intakeRuleText: UiText,
     val recurrenceText: UiText,
-    val courseLabel: UiText?
+    val courseLabel: UiText?,
+    val dosesLeftLabel: UiText?,
+    val lowStockWarning: UiText?,
 )
 
 internal data class MedicationListUiState(

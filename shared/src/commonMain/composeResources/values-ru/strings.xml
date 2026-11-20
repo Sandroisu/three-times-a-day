@@ -158,12 +158,15 @@
     <string name="medication_name_error">Введите название</string>
     <string name="medication_dosage_error">Введите дозировку</string>
     <string name="medication_list_error">Не удалось загрузить препараты</string>
+    <string name="medication_doses_left_count">Осталось доз: %1$d</string>
+    <string name="medication_low_stock">Запас заканчивается, пора пополнить</string>
     <string name="routine_save_error">Не удалось сохранить режим дня</string>
     <string name="routine_load_error">Не удалось загрузить режим дня</string>
     <string name="routine_duplicate_error">Времена в режиме дня не должны повторяться</string>
     <string name="today_load_error">Не удалось загрузить приёмы</string>
     <string name="today_permission_error">Не удалось запросить разрешение на уведомления</string>
     <string name="today_save_error">Не удалось сохранить статус приёма</string>
+    <string name="intake_low_stock">Осталось доз: %1$d, пора пополнить запас</string>
     <string name="today_notification_error">Не удалось обновить уведомления</string>
     <string name="notification_request_message">Чтобы приходили напоминания, разрешите уведомления.</string>
     <string name="notification_request_action">Включить уведомления</string>

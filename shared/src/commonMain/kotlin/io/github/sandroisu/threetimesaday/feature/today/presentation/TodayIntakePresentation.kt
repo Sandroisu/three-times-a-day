@@ -1,7 +1,9 @@
 package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import io.github.sandroisu.threetimesaday.core.ui.UiText
+import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
+import io.github.sandroisu.threetimesaday.feature.medication.domain.isMedicationStockLow
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import kotlinx.datetime.LocalDateTime
@@ -23,6 +25,7 @@ internal data class MedicationIntakeUiModel(
     val status: IntakeDisplayStatus,
     val statusLabel: UiText,
     val isActionable: Boolean,
+    val lowStockWarning: UiText?,
 )
 
 internal data class IntakeTimeGroup(
@@ -34,8 +37,10 @@ internal fun todayIntakeGroups(
     events: List<MedicationIntakeEvent>,
     records: List<MedicationIntakeRecord>,
     currentDateTime: LocalDateTime?,
+    medications: List<Medication>,
 ): List<IntakeTimeGroup> {
     val recordsById = records.associateBy { it.eventId }
+    val medicationsById = medications.associateBy { medication -> medication.id }
     return events.sortedBy { it.scheduledDateTime }
         .map { event ->
             val status = intakeDisplayStatus(event, currentDateTime)
@@ -53,6 +58,10 @@ internal fun todayIntakeGroups(
                 status = status,
                 statusLabel = intakeDisplayStatusLabel(status, takenAt),
                 isActionable = status == IntakeDisplayStatus.Due || status == IntakeDisplayStatus.Overdue,
+                lowStockWarning = medicationsById[event.medicationId]
+                    ?.takeIf(::isMedicationStockLow)
+                    ?.dosesLeft
+                    ?.let(::intakeLowStockLabel),
             )
         }
         .groupBy { it.scheduledDateTime }

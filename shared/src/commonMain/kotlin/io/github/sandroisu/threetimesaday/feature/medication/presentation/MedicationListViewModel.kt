@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
+import io.github.sandroisu.threetimesaday.feature.medication.domain.isMedicationStockLow
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +65,8 @@ internal class MedicationListViewModel(
             courseEndDate = medication.courseEndDate,
             recurrence = medication.recurrence,
             today = today
-        )
+        ),
+        dosesLeftLabel = medication.dosesLeft?.let(::medicationDosesLeftLabel),
+        lowStockWarning = if (isMedicationStockLow(medication)) MedicationLabels.lowStock else null,
     )
 }

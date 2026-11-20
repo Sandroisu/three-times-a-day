@@ -11,6 +11,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -63,6 +64,29 @@ class MedicationListViewModelTest {
         assertEquals(UiText(Res.string.medication_daily), listItem.recurrenceText)
         assertEquals(UiText(Res.string.course_day, listOf(3)), listItem.courseLabel)
         assertFalse(viewModel.uiState.value.isLoading)
+    }
+
+    @Test
+    fun trackedStockShowsDosesLeftAndLowStockWarning() = runTest(testDispatcher) {
+        val baseMedication = createMedication("wake", "Энтекавир", "1 таблетка", MedicationIntakeMoment.AfterWakeUp)
+        val medicationRepository = FakeMedicationRepository(
+            listOf(
+                baseMedication.copy(id = "low", dosesLeft = 2),
+                baseMedication.copy(id = "enough", dosesLeft = 30),
+                baseMedication.copy(id = "untracked", dosesLeft = null),
+            )
+        )
+        val viewModel = MedicationListViewModel(medicationRepository, FixedTimeProvider())
+
+        advanceUntilIdle()
+
+        val itemsById = viewModel.uiState.value.medications.associateBy { it.id }
+        assertEquals(medicationDosesLeftLabel(2), itemsById.getValue("low").dosesLeftLabel)
+        assertEquals(MedicationLabels.lowStock, itemsById.getValue("low").lowStockWarning)
+        assertEquals(medicationDosesLeftLabel(30), itemsById.getValue("enough").dosesLeftLabel)
+        assertNull(itemsById.getValue("enough").lowStockWarning)
+        assertNull(itemsById.getValue("untracked").dosesLeftLabel)
+        assertNull(itemsById.getValue("untracked").lowStockWarning)
     }
 
     @Test

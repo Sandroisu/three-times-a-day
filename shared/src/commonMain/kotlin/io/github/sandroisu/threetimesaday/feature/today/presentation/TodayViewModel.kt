@@ -7,6 +7,7 @@ import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.core.time.formatScreenDate
 import io.github.sandroisu.threetimesaday.core.time.plusMinutes
+import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
@@ -42,6 +43,7 @@ internal class TodayViewModel(
     private val mutableUiState = MutableStateFlow(TodayUiState())
     val uiState: StateFlow<TodayUiState> = mutableUiState.asStateFlow()
     private var displayedRecords: List<MedicationIntakeRecord> = emptyList()
+    private var displayedMedications: List<Medication> = emptyList()
 
     init {
         loadToday()
@@ -65,13 +67,14 @@ internal class TodayViewModel(
                 val records = medicationIntakeRecordRepository.getRecordsForDate(currentDate)
                 val intakeEvents = applyMedicationIntakeRecords(generatedEvents, records)
                 displayedRecords = records
+                displayedMedications = medications
                 mutableUiState.update { currentState ->
                     currentState.copy(
                         isLoading = false,
                         dateTitle = formatScreenDate(currentDate),
                         intakeEvents = intakeEvents,
                         currentDateTime = currentDateTime,
-                        intakeGroups = todayIntakeGroups(intakeEvents, records, currentDateTime),
+                        intakeGroups = todayIntakeGroups(intakeEvents, records, currentDateTime, medications),
                         completionFraction = intakeCompletionFraction(intakeEvents),
                         takenCount = intakeEvents.count { it.status == MedicationIntakeStatus.Taken },
                         errorMessage = null
@@ -137,7 +140,7 @@ internal class TodayViewModel(
         mutableUiState.update { currentState ->
             currentState.copy(
                 currentDateTime = currentDateTime,
-                intakeGroups = todayIntakeGroups(currentState.intakeEvents, displayedRecords, currentDateTime),
+                intakeGroups = todayIntakeGroups(currentState.intakeEvents, displayedRecords, currentDateTime, displayedMedications),
                 upcomingIntakes = currentState.upcomingIntakes.filter { it.scheduledDateTime > currentDateTime },
             )
         }

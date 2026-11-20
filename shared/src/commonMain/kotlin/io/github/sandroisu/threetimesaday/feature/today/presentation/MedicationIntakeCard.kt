@@ -20,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import io.github.sandroisu.threetimesaday.core.ui.AppIcons
 import io.github.sandroisu.threetimesaday.core.ui.AppSpacing
 import io.github.sandroisu.threetimesaday.core.ui.PrimaryActionButton
+import io.github.sandroisu.threetimesaday.core.ui.WarningLabel
 import io.github.sandroisu.threetimesaday.core.ui.semanticColors
 
 @Composable
@@ -48,6 +49,7 @@ internal fun MedicationIntakeCard(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             MedicationStatusIndicator(intake.status, intake.statusLabel.asString())
+            intake.lowStockWarning?.let { warning -> WarningLabel(warning.asString()) }
             if (intake.isActionable) {
                 Column(Modifier.padding(top = AppSpacing.compact)) {
                     PrimaryActionButton(TodayLabels.markTaken.asString(), onMarkTaken)

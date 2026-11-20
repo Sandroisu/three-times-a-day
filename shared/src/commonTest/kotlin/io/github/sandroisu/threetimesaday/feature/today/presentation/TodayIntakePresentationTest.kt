@@ -1,13 +1,18 @@
 package io.github.sandroisu.threetimesaday.feature.today.presentation
 
 import io.github.sandroisu.threetimesaday.core.ui.UiText
+import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
+import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import threetimesaday.shared.generated.resources.Res
 import threetimesaday.shared.generated.resources.date_day_month
@@ -26,7 +31,7 @@ class TodayIntakePresentationTest {
         val postponed = event("tomorrow", 8, MedicationIntakeStatus.Postponed).copy(
             scheduledDateTime = LocalDateTime(2026, 9, 21, 0, 5),
         )
-        val group = todayIntakeGroups(listOf(postponed), emptyList(), now).single()
+        val group = todayIntakeGroups(listOf(postponed), emptyList(), now, emptyList()).single()
         assertEquals(UiText(Res.string.date_time, listOf(UiText(Res.string.date_day_month, listOf(21, UiText(Res.string.month_9))), "00:05")), group.timeLabel)
         assertEquals(postponed.scheduledDateTime, group.intakes.single().scheduledDateTime)
     }
@@ -37,6 +42,7 @@ class TodayIntakePresentationTest {
             listOf(event("late", 18), event("early", 8), event("same-time", 8)),
             emptyList(),
             now,
+            emptyList(),
         )
         assertEquals(listOf("08:00", "18:00").map { UiText(Res.string.time_value, listOf(it)) }, groups.map { it.timeLabel })
         assertEquals(listOf("early", "same-time"), groups.first().intakes.map { it.eventId })
@@ -44,7 +50,7 @@ class TodayIntakePresentationTest {
 
     @Test
     fun actionableStatesRespectExistingStrictOverdueBoundary() {
-        val groups = todayIntakeGroups(listOf(event("past", 8), event("due", 12), event("future", 18)), emptyList(), now)
+        val groups = todayIntakeGroups(listOf(event("past", 8), event("due", 12), event("future", 18)), emptyList(), now, emptyList())
         val intakes = groups.flatMap { it.intakes }
         assertEquals(listOf(IntakeDisplayStatus.Overdue, IntakeDisplayStatus.Due, IntakeDisplayStatus.Upcoming), intakes.map { it.status })
         assertTrue(intakes[0].isActionable)
@@ -66,7 +72,7 @@ class TodayIntakePresentationTest {
             postponedDateTime = null,
         )
         val events = listOf(taken, skipped, upcoming)
-        val groups = todayIntakeGroups(events, listOf(record), now)
+        val groups = todayIntakeGroups(events, listOf(record), now, emptyList())
         assertEquals(UiText(Res.string.intake_taken_at, listOf("08:12")), groups.first().intakes.single().statusLabel)
         assertFalse(groups.first().intakes.single().isActionable)
         assertEquals(IntakeDisplayStatus.Skipped, groups[1].intakes.single().status)
@@ -76,7 +82,7 @@ class TodayIntakePresentationTest {
 
     @Test
     fun postponedIntakeUsesEffectiveTimeAndRetainsPostponedContext() {
-        val group = todayIntakeGroups(listOf(event("postponed", 18, MedicationIntakeStatus.Postponed)), emptyList(), now).single()
+        val group = todayIntakeGroups(listOf(event("postponed", 18, MedicationIntakeStatus.Postponed)), emptyList(), now, emptyList()).single()
         assertEquals(UiText(Res.string.time_value, listOf("18:00")), group.timeLabel)
         assertEquals(IntakeDisplayStatus.Upcoming, group.intakes.single().status)
         assertEquals(UiText(Res.string.intake_postponed), group.intakes.single().contextLabel)
@@ -85,11 +91,36 @@ class TodayIntakePresentationTest {
 
     @Test
     fun missingClockDoesNotOfferEarlyActionsAndMissingRecordDoesNotInventTakenTime() {
-        val upcoming = todayIntakeGroups(listOf(event("unknown", 8)), emptyList(), null).single().intakes.single()
+        val upcoming = todayIntakeGroups(listOf(event("unknown", 8)), emptyList(), null, emptyList()).single().intakes.single()
         assertFalse(upcoming.isActionable)
-        val taken = todayIntakeGroups(listOf(event("taken", 8, MedicationIntakeStatus.Taken)), emptyList(), now).single().intakes.single()
+        val taken = todayIntakeGroups(listOf(event("taken", 8, MedicationIntakeStatus.Taken)), emptyList(), now, emptyList()).single().intakes.single()
         assertEquals(UiText(Res.string.intake_taken), taken.statusLabel)
     }
+
+    @Test
+    fun intakeOfMedicationWithLowStockShowsWarningWithDosesLeft() {
+        val groups = todayIntakeGroups(
+            listOf(event("low", 8), event("enough", 9), event("untracked", 10)),
+            emptyList(),
+            now,
+            listOf(medication("low", dosesLeft = 2), medication("enough", dosesLeft = 3), medication("untracked", dosesLeft = null)),
+        )
+        val warnings = groups.flatMap { it.intakes }.associate { it.eventId to it.lowStockWarning }
+
+        assertEquals(intakeLowStockLabel(2), warnings.getValue("low"))
+        assertNull(warnings.getValue("enough"))
+        assertNull(warnings.getValue("untracked"))
+    }
+
+    private fun medication(id: String, dosesLeft: Int?): Medication = Medication(
+        id = "medication-$id",
+        name = "Препарат",
+        dosageText = "1 таблетка",
+        intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.AfterWakeUp),
+        courseStartDate = LocalDate(2026, 9, 1),
+        courseEndDate = null,
+        dosesLeft = dosesLeft,
+    )
 
     private fun event(id: String, hour: Int, status: MedicationIntakeStatus = MedicationIntakeStatus.Scheduled): MedicationIntakeEvent =
         MedicationIntakeEvent(

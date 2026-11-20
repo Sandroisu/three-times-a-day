@@ -158,12 +158,15 @@
     <string name="medication_name_error">Enter a medication name</string>
     <string name="medication_dosage_error">Enter a dosage</string>
     <string name="medication_list_error">Could not load medications</string>
+    <string name="medication_doses_left_count">Doses left: %1$d</string>
+    <string name="medication_low_stock">Running low, time to refill</string>
     <string name="routine_save_error">Could not save daily routine</string>
     <string name="routine_load_error">Could not load daily routine</string>
     <string name="routine_duplicate_error">Each time in your daily routine must be different</string>
     <string name="today_load_error">Could not load doses</string>
     <string name="today_permission_error">Could not request notification permission</string>
     <string name="today_save_error">Could not save dose status</string>
+    <string name="intake_low_stock">Doses left: %1$d, time to refill</string>
     <string name="today_notification_error">Could not update reminders</string>
     <string name="notification_request_message">Allow notifications to receive reminders.</string>
     <string name="notification_request_action">Enable notifications</string>
