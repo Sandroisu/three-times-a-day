@@ -112,6 +112,7 @@ internal fun MedicationEditorScreen(
                     uiState = uiState,
                     onNameChange = medicationEditorViewModel::onNameChanged,
                     onDosageChange = medicationEditorViewModel::onDosageChanged,
+                    onDosesLeftChange = medicationEditorViewModel::onDosesLeftChanged,
                     onCourseStartDateChange = medicationEditorViewModel::onCourseStartDateChanged,
                     onCourseEndDateChange = medicationEditorViewModel::onCourseEndDateChanged,
                     onDailyRecurrenceSelected = medicationEditorViewModel::onDailyRecurrenceSelected,
@@ -152,6 +153,7 @@ private fun MedicationForm(
     uiState: MedicationEditorUiState,
     onNameChange: (String) -> Unit,
     onDosageChange: (String) -> Unit,
+    onDosesLeftChange: (String) -> Unit,
     onCourseStartDateChange: (String) -> Unit,
     onCourseEndDateChange: (String) -> Unit,
     onDailyRecurrenceSelected: () -> Unit,
@@ -178,7 +180,15 @@ private fun MedicationForm(
                 onValueChange = onDosageChange,
                 error = uiState.dosageError?.asString(),
                 hint = MedicationLabels.dosageHint.asString(),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            )
+            FormField(
+                label = MedicationLabels.dosesLeft.asString(),
+                value = uiState.dosesLeftText,
+                onValueChange = onDosesLeftChange,
+                error = uiState.dosesLeftError?.asString(),
+                hint = MedicationLabels.dosesLeftHint.asString(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
             )
         }
         Column(verticalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {

@@ -122,6 +122,9 @@
     <string name="medication_reminder">Reminder time</string>
     <string name="medication_about">Medication</string>
     <string name="medication_dosage_hint">For example, 1 tablet or 5 ml</string>
+    <string name="medication_doses_left">Doses left (optional)</string>
+    <string name="medication_doses_left_hint">Leave empty if you do not want to track how many doses are left</string>
+    <string name="medication_doses_left_error">Enter a whole number from 0 to 9999</string>
     <string name="medication_dosage">Dosage</string>
     <string name="medication_name">Medication name</string>
     <string name="medication_details">Medication details</string>

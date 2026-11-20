@@ -122,6 +122,9 @@
     <string name="medication_reminder">Время приёма</string>
     <string name="medication_about">Основное</string>
     <string name="medication_dosage_hint">Например, 1 таблетка или 5 мл</string>
+    <string name="medication_doses_left">Осталось доз (необязательно)</string>
+    <string name="medication_doses_left_hint">Оставьте пустым, если не нужно следить за запасом</string>
+    <string name="medication_doses_left_error">Введите целое число от 0 до 9999</string>
     <string name="medication_dosage">Дозировка</string>
     <string name="medication_name">Название препарата</string>
     <string name="medication_details">О препарате</string>

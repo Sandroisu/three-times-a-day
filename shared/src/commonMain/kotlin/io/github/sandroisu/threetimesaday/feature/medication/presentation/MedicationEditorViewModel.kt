@@ -73,6 +73,10 @@ internal class MedicationEditorViewModel(
         mutableUiState.update { currentState -> validate(currentState.copy(dosageText = text)) }
     }
 
+    fun onDosesLeftChanged(text: String) {
+        mutableUiState.update { currentState -> validate(currentState.copy(dosesLeftText = text)) }
+    }
+
     fun onCourseStartDateChanged(text: String) {
         mutableUiState.update { currentState -> validate(currentState.copy(courseStartDateText = text)) }
     }
@@ -147,6 +151,7 @@ internal class MedicationEditorViewModel(
             .takeIf { text -> text.isNotEmpty() }
             ?.let(::parseDateInput)
         val recurrence = buildRecurrence(validatedState) ?: return
+        val dosesLeft = parseDosesLeft(validatedState.dosesLeftText)
         mutableUiState.update { it.copy(isSaving = true) }
         viewModelScope.launch {
             try {
@@ -156,6 +161,7 @@ internal class MedicationEditorViewModel(
                     courseStartDate = courseStartDate,
                     courseEndDate = courseEndDate,
                     recurrence = recurrence,
+                    dosesLeft = dosesLeft,
                 )
                 medicationSavedEventsChannel.tryEmit(Unit)
             } catch (cancellation: CancellationException) {
@@ -268,6 +274,7 @@ internal class MedicationEditorViewModel(
             medicationId = medication.id,
             nameText = medication.name,
             dosageText = medication.dosageText,
+            dosesLeftText = medication.dosesLeft?.toString().orEmpty(),
             courseStartDateText = formatDateInput(medication.courseStartDate),
             courseEndDateText = medication.courseEndDate?.let(::formatDateInput).orEmpty(),
             isDeleteVisible = true,
@@ -316,6 +323,7 @@ internal class MedicationEditorViewModel(
         courseStartDate: kotlinx.datetime.LocalDate,
         courseEndDate: kotlinx.datetime.LocalDate?,
         recurrence: MedicationRecurrence,
+        dosesLeft: Int?,
     ) {
         val trimmedName = state.nameText.trim()
         val trimmedDosage = state.dosageText.trim()
@@ -329,6 +337,7 @@ internal class MedicationEditorViewModel(
                 courseStartDate = courseStartDate,
                 courseEndDate = courseEndDate,
                 recurrence = recurrence,
+                dosesLeft = dosesLeft,
             )
             medicationRepository.saveMedication(newMedication)
         } else {
@@ -340,6 +349,7 @@ internal class MedicationEditorViewModel(
                 courseStartDate = courseStartDate,
                 courseEndDate = courseEndDate,
                 recurrence = recurrence,
+                dosesLeft = dosesLeft,
             ) ?: Medication(
                 id = editedMedicationId,
                 name = trimmedName,
@@ -348,6 +358,7 @@ internal class MedicationEditorViewModel(
                 courseStartDate = courseStartDate,
                 courseEndDate = courseEndDate,
                 recurrence = recurrence,
+                dosesLeft = dosesLeft,
             )
             medicationRepository.updateMedication(updatedMedication)
         }
@@ -378,9 +389,16 @@ internal class MedicationEditorViewModel(
         )
     }
 
+    private fun parseDosesLeft(text: String): Int? {
+        val trimmedText = text.trim()
+        if (!trimmedText.all { character -> character in '0'..'9' }) return null
+        return trimmedText.toIntOrNull()?.takeIf { dosesLeft -> dosesLeft <= MAX_DOSES_LEFT }
+    }
+
     private fun validate(state: MedicationEditorUiState, forceErrors: Boolean = false): MedicationEditorUiState {
         val nameValid = state.nameText.trim().isNotEmpty()
         val dosageValid = state.dosageText.trim().isNotEmpty()
+        val dosesLeftValid = state.dosesLeftText.isBlank() || parseDosesLeft(state.dosesLeftText) != null
         val exactTimeParsed = parseTimeOfDay(state.exactTimeText)
         val exactTimeValid = !state.isExactTimeVisible || exactTimeParsed != null
         val courseStartDate = parseDateInput(state.courseStartDateText)
@@ -407,6 +425,7 @@ internal class MedicationEditorViewModel(
         return state.copy(
             nameError = if (showNameError) MedicationLabels.nameError else null,
             dosageError = if (showDosageError) MedicationLabels.dosageError else null,
+            dosesLeftError = if (dosesLeftValid) null else MedicationLabels.dosesLeftError,
             exactTimeError = if (showExactTimeError) UiLabels.timeError else null,
             courseStartDateError = if (showCourseStartDateError) UiLabels.dateError else null,
             courseEndDateError = when {
@@ -416,7 +435,7 @@ internal class MedicationEditorViewModel(
             },
             monthlyIntervalError = if (showMonthlyIntervalError) MedicationLabels.repeatMonthsError else null,
             monthlyDayOfMonthError = if (showMonthlyDayOfMonthError) MedicationLabels.dayOfMonthError else null,
-            isSaveEnabled = nameValid && dosageValid && exactTimeValid && courseStartDateValid && courseEndDateFormatValid &&
+            isSaveEnabled = nameValid && dosageValid && dosesLeftValid && exactTimeValid && courseStartDateValid && courseEndDateFormatValid &&
                 courseDateRangeValid && monthlyIntervalValid && monthlyDayOfMonthValid && !state.isLoading,
         )
     }
@@ -426,6 +445,7 @@ internal class MedicationEditorViewModel(
         const val MAX_MONTHLY_INTERVAL = 24
         const val MIN_DAY_OF_MONTH = 1
         const val MAX_DAY_OF_MONTH = 31
+        const val MAX_DOSES_LEFT = 9999
     }
 
 }

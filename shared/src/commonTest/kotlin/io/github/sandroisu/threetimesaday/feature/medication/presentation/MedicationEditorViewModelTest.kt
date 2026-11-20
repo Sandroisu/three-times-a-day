@@ -304,6 +304,109 @@ class MedicationEditorViewModelTest {
     }
 
     @Test
+    fun newMedicationWithoutDosesLeftKeepsStockUntracked() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Аспирин")
+        viewModel.onDosageChanged("1 таблетка")
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNull(medicationRepository.currentMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun dosesLeftIsSavedForNewMedication() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(emptyList())
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Аспирин")
+        viewModel.onDosageChanged("1 таблетка")
+
+        viewModel.onDosesLeftChanged(" 30 ")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertEquals(30, medicationRepository.currentMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun invalidDosesLeftShowsErrorAndDisablesSave() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeMedicationRepository(emptyList()))
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Аспирин")
+        viewModel.onDosageChanged("1 таблетка")
+
+        listOf("3a", "-1", "1.5", "10000").forEach { invalidText ->
+            viewModel.onDosesLeftChanged(invalidText)
+
+            val uiState = viewModel.uiState.value
+            assertEquals(MedicationLabels.dosesLeftError, uiState.dosesLeftError, invalidText)
+            assertFalse(uiState.isSaveEnabled, invalidText)
+        }
+    }
+
+    @Test
+    fun dosesLeftBoundariesAreValid() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeMedicationRepository(emptyList()))
+        viewModel.start(null)
+        advanceUntilIdle()
+        viewModel.onNameChanged("Аспирин")
+        viewModel.onDosageChanged("1 таблетка")
+
+        listOf("0", "9999").forEach { validText ->
+            viewModel.onDosesLeftChanged(validText)
+
+            assertEquals(validText, viewModel.uiState.value.dosesLeftText)
+            assertNull(viewModel.uiState.value.dosesLeftError, validText)
+            assertTrue(viewModel.uiState.value.isSaveEnabled, validText)
+        }
+    }
+
+    @Test
+    fun existingMedicationLoadsDosesLeft() = runTest(testDispatcher) {
+        val viewModel = createViewModel(FakeMedicationRepository(listOf(stockedMedication(dosesLeft = 12))))
+
+        viewModel.start("existing")
+        advanceUntilIdle()
+
+        assertEquals("12", viewModel.uiState.value.dosesLeftText)
+    }
+
+    @Test
+    fun clearingDosesLeftStopsStockTracking() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(listOf(stockedMedication(dosesLeft = 12)))
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start("existing")
+        advanceUntilIdle()
+
+        viewModel.onDosesLeftChanged("")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertNull(medicationRepository.currentMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun changingDosesLeftUpdatesStock() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(listOf(stockedMedication(dosesLeft = 2)))
+        val viewModel = createViewModel(medicationRepository)
+        viewModel.start("existing")
+        advanceUntilIdle()
+
+        viewModel.onDosesLeftChanged("60")
+        viewModel.save()
+        advanceUntilIdle()
+
+        assertEquals(60, medicationRepository.currentMedications().single().dosesLeft)
+    }
+
+    @Test
     fun successfulDeleteRemovesMedicationFromRepository() = runTest(testDispatcher) {
         val existingMedication = createMedication(
             medicationId = "existing",
@@ -500,6 +603,13 @@ class MedicationEditorViewModelTest {
         timeProvider = FakeTimeProvider(testDate),
         medicationIdGenerator = idGenerator
     )
+
+    private fun stockedMedication(dosesLeft: Int): Medication = createMedication(
+        medicationId = "existing",
+        name = "Магний",
+        dosageText = "1 таблетка",
+        intakeRule = MedicationIntakeRule.AtMoment(MedicationIntakeMoment.BeforeSleep),
+    ).copy(dosesLeft = dosesLeft)
 
     private fun createMedication(
         medicationId: String,

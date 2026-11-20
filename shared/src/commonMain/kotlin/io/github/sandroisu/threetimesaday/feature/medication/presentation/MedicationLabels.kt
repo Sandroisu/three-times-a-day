@@ -27,6 +27,9 @@ import threetimesaday.shared.generated.resources.medication_distributed_hint
 import threetimesaday.shared.generated.resources.medication_dosage
 import threetimesaday.shared.generated.resources.medication_dosage_error
 import threetimesaday.shared.generated.resources.medication_dosage_hint
+import threetimesaday.shared.generated.resources.medication_doses_left
+import threetimesaday.shared.generated.resources.medication_doses_left_error
+import threetimesaday.shared.generated.resources.medication_doses_left_hint
 import threetimesaday.shared.generated.resources.medication_edit
 import threetimesaday.shared.generated.resources.medication_edit_medication
 import threetimesaday.shared.generated.resources.medication_empty_message
@@ -93,6 +96,9 @@ internal object MedicationLabels {
     val name = UiText(Res.string.medication_name)
     val dosage = UiText(Res.string.medication_dosage)
     val dosageHint = UiText(Res.string.medication_dosage_hint)
+    val dosesLeft = UiText(Res.string.medication_doses_left)
+    val dosesLeftHint = UiText(Res.string.medication_doses_left_hint)
+    val dosesLeftError = UiText(Res.string.medication_doses_left_error)
     val about = UiText(Res.string.medication_about)
     val reminder = UiText(Res.string.medication_reminder)
     val reminderHint = UiText(Res.string.medication_reminder_hint)
