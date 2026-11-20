@@ -20,6 +20,7 @@ import kotlinx.serialization.json.Json
 import org.koin.dsl.koinApplication
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertSame
 
 class StorageJsonTest {
@@ -40,7 +41,7 @@ class StorageJsonTest {
         """{"id":"aspirin","name":"Aspirin","dosageText":"1 tablet",""" +
             """"intakeRule":{"type":"io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeRule.SeveralTimesPerDay","moments":["AfterBreakfast","BeforeSleep"]},""" +
             """"courseStartDate":"2026-07-04","courseEndDate":null,""" +
-            """"recurrence":{"type":"io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence.Daily"}}"""
+            """"recurrence":{"type":"io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRecurrence.Daily"},"dosesLeft":null}"""
 
     private val reminder = Reminder(
         id = "gym",
@@ -112,6 +113,7 @@ class StorageJsonTest {
         assertEquals(MedicationIntakeRule.AtExactTime(LocalTime(9, 30)), decoded.intakeRule)
         assertEquals(LocalDate(2026, 8, 1), decoded.courseEndDate)
         assertEquals(MedicationRecurrence.Daily, decoded.recurrence)
+        assertNull(decoded.dosesLeft)
     }
 
     @Test

@@ -12,4 +12,5 @@ data class Medication(
     val courseStartDate: LocalDate,
     val courseEndDate: LocalDate?,
     val recurrence: MedicationRecurrence = MedicationRecurrence.Daily,
+    val dosesLeft: Int? = null,
 )
