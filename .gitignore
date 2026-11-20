@@ -23,3 +23,6 @@ keystore.properties
 
 # Signed bundles from Android Studio
 androidApp/release/
+
+# Store graphics live in Play Console
+androidApp/src/main/play/listings/*/graphics/

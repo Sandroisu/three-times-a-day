@@ -1,0 +1,15 @@
+Remindly is a simple daily reminder app for the things that matter, from medication on schedule to everyday tasks.
+
+Set a pill reminder after breakfast or at an exact time, add personal reminders that repeat every day, on workdays, every few days or once a month, and get a notification right when you need it. Turn on alarm mode for reminders you really can't miss.
+
+Use Remindly as:
+
+• A medication reminder and pill tracker for your daily routine
+• Everyday reminders for appointments and important dates
+• Pet care and grooming reminders
+• Reminders for meter readings and regular household tasks
+• Anything else you don't want to forget
+
+No complicated task manager, no overloaded planner. Just reminders that arrive on time.
+
+Stay on schedule. Remember what matters.
