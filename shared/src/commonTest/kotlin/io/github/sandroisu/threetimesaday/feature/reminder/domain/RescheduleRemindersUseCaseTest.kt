@@ -99,6 +99,41 @@ class RescheduleRemindersUseCaseTest {
         assertTrue(scheduler.scheduledNotifications.isEmpty())
     }
 
+    @Test
+    fun doesNotSchedulePausedReminder() = runTest {
+        val scheduler = FakeScheduler()
+        val activeReminder = Reminder(
+            id = "water",
+            title = "Water plants",
+            date = LocalDate(2026, 1, 16),
+            time = LocalTime(18, 0),
+            recurrence = ReminderRecurrence.Once,
+        )
+        val pausedReminder = Reminder(
+            id = "gym",
+            title = "Go to the gym",
+            date = LocalDate(2026, 1, 16),
+            time = LocalTime(19, 30),
+            recurrence = ReminderRecurrence.Daily,
+            isEnabled = false,
+        )
+        val useCase = RescheduleRemindersUseCase(
+            reminderRepository = FakeReminderRepository(listOf(pausedReminder, activeReminder)),
+            findNextReminderDateTime = FindNextReminderDateTimeUseCase(),
+            medicationReminderScheduler = scheduler,
+            timeProvider = FakeTimeProvider(LocalDateTime(LocalDate(2026, 1, 15), LocalTime(12, 0))),
+            buildReminderMessage = { "Reminder" },
+        )
+
+        useCase()
+
+        assertEquals(listOf(REMINDER_NOTIFICATION_ID_PREFIX), scheduler.cancelledPrefixes)
+        assertEquals(
+            listOf(REMINDER_NOTIFICATION_ID_PREFIX + "water|2026-01-16T18:00"),
+            scheduler.scheduledNotifications.map { notification -> notification.notificationId },
+        )
+    }
+
     private class FakeReminderRepository(
         private val reminders: List<Reminder>,
     ) : ReminderRepository {

@@ -46,6 +46,25 @@ class PersistentReminderRepositoryTest {
         val restoredReminder = PersistentReminderRepository(storage, json).getReminders().single()
 
         assertEquals(ReminderAlertMode.Notification, restoredReminder.alertMode)
+        assertTrue(restoredReminder.isEnabled)
+    }
+
+    @Test
+    fun pausedReminderStaysPausedAfterRepositoryRecreation() = runTest {
+        val storage = InMemoryKeyValueStorage()
+        val reminder = Reminder(
+            id = "gym",
+            title = "Go to the gym",
+            date = LocalDate(2026, 2, 3),
+            time = LocalTime(19, 30),
+            recurrence = ReminderRecurrence.Daily,
+            isEnabled = false,
+        )
+        PersistentReminderRepository(storage, json).saveReminder(reminder)
+
+        val restoredReminder = PersistentReminderRepository(storage, json).getReminders().single()
+
+        assertEquals(reminder, restoredReminder)
     }
 
     @Test

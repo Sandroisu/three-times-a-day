@@ -21,6 +21,7 @@ class RescheduleRemindersUseCase(
         }
         val currentDateTime = timeProvider.currentDateTime()
         val occurrences = reminderRepository.getReminders()
+            .filter { reminder -> reminder.isEnabled }
             .flatMap { reminder -> upcomingOccurrences(reminder, currentDateTime) }
             .sortedBy { occurrence -> occurrence.scheduledDateTime }
             .take(MAX_SCHEDULED_OCCURRENCES)

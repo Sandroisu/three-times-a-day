@@ -25,6 +25,7 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ReminderEditorViewModelTest {
@@ -85,6 +86,22 @@ class ReminderEditorViewModelTest {
 
         assertEquals(ReminderRecurrenceType.Weekdays, viewModel.uiState.value.recurrenceType)
         assertEquals(weekdays.toSet(), viewModel.uiState.value.selectedWeekdays)
+    }
+
+    @Test
+    fun savingPausedReminderKeepsItPaused() = runTest(testDispatcher) {
+        val repository = FakeReminderRepository(reminder(ReminderRecurrence.Daily).copy(isEnabled = false))
+        val viewModel = createViewModel(repository)
+        viewModel.start(reminderId = REMINDER_ID)
+        advanceUntilIdle()
+        viewModel.onTitleChanged("Evening stand-up")
+
+        viewModel.save()
+        advanceUntilIdle()
+
+        val savedReminder = repository.reminders.single()
+        assertEquals("Evening stand-up", savedReminder.title)
+        assertFalse(savedReminder.isEnabled)
     }
 
     @Test

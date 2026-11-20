@@ -12,4 +12,6 @@ data class Reminder(
     val time: LocalTime,
     val recurrence: ReminderRecurrence,
     val alertMode: ReminderAlertMode = ReminderAlertMode.Notification,
+    // Reminders saved before pause support have no such field and must stay on.
+    val isEnabled: Boolean = true,
 )

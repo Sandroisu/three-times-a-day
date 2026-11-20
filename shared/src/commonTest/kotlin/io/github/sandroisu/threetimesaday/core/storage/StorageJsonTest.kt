@@ -48,11 +48,12 @@ class StorageJsonTest {
         date = LocalDate(2026, 3, 2),
         time = LocalTime(18, 45),
         recurrence = ReminderRecurrence.OnWeekdays(listOf(ReminderWeekday.Monday, ReminderWeekday.Thursday)),
+        isEnabled = false,
     )
     private val storedReminder =
         """{"id":"gym","title":"Gym","date":"2026-03-02","time":"18:45",""" +
             """"recurrence":{"type":"io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderRecurrence.OnWeekdays","weekdays":["Monday","Thursday"]},""" +
-            """"alertMode":{"type":"io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderAlertMode.Notification"}}"""
+            """"alertMode":{"type":"io.github.sandroisu.threetimesaday.feature.reminder.domain.ReminderAlertMode.Notification"},"isEnabled":false}"""
 
     private val intakeRecord = MedicationIntakeRecord(
         eventId = "aspirin|2026-07-04|09:30|AfterBreakfast",
