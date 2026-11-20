@@ -11,6 +11,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIn
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.ChangeMedicationIntakeStatusUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
@@ -34,7 +35,8 @@ internal class TodayViewModel(
     private val applyMedicationIntakeRecords: ApplyMedicationIntakeRecordsUseCase,
     private val medicationReminderScheduler: MedicationReminderScheduler,
     private val rescheduleMedicationReminders: RescheduleMedicationRemindersUseCase,
-    private val appSettingsOpener: AppSettingsOpener
+    private val appSettingsOpener: AppSettingsOpener,
+    private val changeMedicationIntakeStatus: ChangeMedicationIntakeStatusUseCase,
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
@@ -190,7 +192,7 @@ internal class TodayViewModel(
             ?: return
         viewModelScope.launch {
             try {
-                medicationIntakeRecordRepository.saveRecord(buildRecord(targetEvent, status))
+                changeMedicationIntakeStatus(buildRecord(targetEvent, status))
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (saveFailure: Exception) {

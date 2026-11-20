@@ -260,6 +260,9 @@ class RescheduleMedicationRemindersUseCaseTest {
         override suspend fun getRecordsForDate(date: LocalDate): List<MedicationIntakeRecord> =
             storedRecords.filter { record -> record.scheduledDateTime.date == date }
 
+        override suspend fun getRecord(eventId: String): MedicationIntakeRecord? =
+            storedRecords.firstOrNull { stored -> stored.eventId == eventId }
+
         override suspend fun saveRecord(record: MedicationIntakeRecord) {
             storedRecords.removeAll { stored -> stored.eventId == record.eventId }
             storedRecords.add(record)

@@ -6,6 +6,8 @@ interface MedicationIntakeRecordRepository {
 
     suspend fun getRecordsForDate(date: LocalDate): List<MedicationIntakeRecord>
 
+    suspend fun getRecord(eventId: String): MedicationIntakeRecord?
+
     suspend fun saveRecord(record: MedicationIntakeRecord)
 
     suspend fun deleteRecord(eventId: String)

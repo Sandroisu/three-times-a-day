@@ -11,5 +11,7 @@ data class MedicationIntakeRecord(
     val scheduledDateTime: LocalDateTime,
     val status: MedicationIntakeStatus,
     val updatedDateTime: LocalDateTime,
-    val postponedDateTime: LocalDateTime? = null
+    val postponedDateTime: LocalDateTime? = null,
+    // True when this intake took a dose from the stock. Only then undo gives the dose back.
+    val stockDoseTaken: Boolean = false,
 )

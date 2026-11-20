@@ -19,6 +19,10 @@ class PersistentMedicationIntakeRecordRepository(
         readRecords().filter { record -> record.scheduledDateTime.date == date }
     }
 
+    override suspend fun getRecord(eventId: String): MedicationIntakeRecord? = mutex.withLock {
+        readRecords().firstOrNull { record -> record.eventId == eventId }
+    }
+
     override suspend fun saveRecord(record: MedicationIntakeRecord) {
         mutex.withLock {
             val records = readRecords().toMutableList()

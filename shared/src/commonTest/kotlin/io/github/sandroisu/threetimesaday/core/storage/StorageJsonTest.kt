@@ -66,7 +66,7 @@ class StorageJsonTest {
     private val storedIntakeRecord =
         """{"eventId":"aspirin|2026-07-04|09:30|AfterBreakfast","medicationId":"aspirin",""" +
             """"scheduledDateTime":"2026-07-04T09:30","status":"Taken",""" +
-            """"updatedDateTime":"2026-07-04T09:41","postponedDateTime":null}"""
+            """"updatedDateTime":"2026-07-04T09:41","postponedDateTime":null,"stockDoseTaken":false}"""
 
     private val dailySchedule = DailySchedule(
         wakeUpTime = LocalTime(7, 0),

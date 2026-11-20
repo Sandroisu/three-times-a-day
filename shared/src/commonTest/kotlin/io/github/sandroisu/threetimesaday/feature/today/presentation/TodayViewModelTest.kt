@@ -15,6 +15,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRe
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.ChangeMedicationIntakeStatusUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
@@ -260,6 +261,38 @@ class TodayViewModelTest {
         val savedRecord = recordRepository.currentRecords().single()
         assertEquals(eventId, savedRecord.eventId)
         assertEquals(MedicationIntakeStatus.Taken, savedRecord.status)
+    }
+
+    @Test
+    fun markIntakeTakenTakesOneDoseFromStock() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp).copy(dosesLeft = 7))
+        )
+        val viewModel = createViewModel(FakeDailyScheduleRepository(createSchedule()), medicationRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+
+        viewModel.markIntakeTaken(eventId)
+        advanceUntilIdle()
+
+        assertEquals(6, medicationRepository.currentMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun markIntakeSkippedAfterTakenGivesDoseBack() = runTest(testDispatcher) {
+        val medicationRepository = FakeMedicationRepository(
+            listOf(createMedication("wake", MedicationIntakeMoment.AfterWakeUp).copy(dosesLeft = 7))
+        )
+        val viewModel = createViewModel(FakeDailyScheduleRepository(createSchedule()), medicationRepository)
+        advanceUntilIdle()
+        val eventId = viewModel.uiState.value.intakeEvents.single().eventId
+        viewModel.markIntakeTaken(eventId)
+        advanceUntilIdle()
+
+        viewModel.markIntakeSkipped(eventId)
+        advanceUntilIdle()
+
+        assertEquals(7, medicationRepository.currentMedications().single().dosesLeft)
     }
 
     @Test
@@ -605,7 +638,8 @@ class TodayViewModelTest {
             applyMedicationIntakeRecords = applyRecords,
             medicationReminderScheduler = reminderScheduler,
             rescheduleMedicationReminders = rescheduleReminders,
-            appSettingsOpener = appSettingsOpener
+            appSettingsOpener = appSettingsOpener,
+            changeMedicationIntakeStatus = ChangeMedicationIntakeStatusUseCase(medicationRepository, recordRepository),
         )
     }
 
@@ -670,6 +704,8 @@ class TodayViewModelTest {
         private val storedMedications: MutableList<Medication> = initialMedications.toMutableList()
         var loadError: Throwable? = null
 
+        fun currentMedications(): List<Medication> = storedMedications.toList()
+
         override suspend fun getMedications(): List<Medication> {
             loadError?.let { throw it }
             return storedMedications.toList()
@@ -714,6 +750,9 @@ class TodayViewModelTest {
 
         override suspend fun getRecordsForDate(date: LocalDate): List<MedicationIntakeRecord> =
             storedRecords.filter { record -> record.scheduledDateTime.date == date }
+
+        override suspend fun getRecord(eventId: String): MedicationIntakeRecord? =
+            storedRecords.firstOrNull { it.eventId == eventId }
 
         override suspend fun saveRecord(record: MedicationIntakeRecord) {
             saveError?.let { throw it }

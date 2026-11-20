@@ -10,6 +10,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PersistentMedicationIntakeRecordRepositoryTest {
@@ -40,6 +41,17 @@ class PersistentMedicationIntakeRecordRepositoryTest {
         val records = repository.getRecordsForDate(firstDate)
         assertEquals(1, records.size)
         assertEquals(MedicationIntakeStatus.Skipped, records.single().status)
+    }
+
+    @Test
+    fun getRecordFindsRecordByEventIdOnAnyDate() = runTest {
+        val repository = PersistentMedicationIntakeRecordRepository(InMemoryKeyValueStorage(), json)
+        val secondRecord = createRecord("second-event", secondDate, MedicationIntakeStatus.Skipped)
+        repository.saveRecord(createRecord("first-event", firstDate, MedicationIntakeStatus.Taken))
+        repository.saveRecord(secondRecord)
+
+        assertEquals(secondRecord, repository.getRecord("second-event"))
+        assertNull(repository.getRecord("missing-event"))
     }
 
     @Test
