@@ -11,6 +11,8 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class PersistentMedicationRepositoryTest {
@@ -122,4 +124,76 @@ class PersistentMedicationRepositoryTest {
         assertEquals("Энтекавир Форте", restoredMedication.name)
         assertEquals("2 таблетки", restoredMedication.dosageText)
     }
+
+    @Test
+    fun takeDoseRemovesOneDoseAndPersists() = runTest {
+        val storage = InMemoryKeyValueStorage()
+        PersistentMedicationRepository(storage, json).saveMedication(stockedMedication(dosesLeft = 5))
+
+        val taken = PersistentMedicationRepository(storage, json).takeDose("aspirin")
+
+        assertTrue(taken)
+        assertEquals(4, PersistentMedicationRepository(storage, json).getMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun takeDoseFromEmptyStockKeepsZero() = runTest {
+        val repository = PersistentMedicationRepository(InMemoryKeyValueStorage(), json)
+        repository.saveMedication(stockedMedication(dosesLeft = 0))
+
+        val taken = repository.takeDose("aspirin")
+
+        assertFalse(taken)
+        assertEquals(0, repository.getMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun takeDoseFromUntrackedStockChangesNothing() = runTest {
+        val repository = PersistentMedicationRepository(InMemoryKeyValueStorage(), json)
+        repository.saveMedication(stockedMedication(dosesLeft = null))
+
+        val taken = repository.takeDose("aspirin")
+
+        assertFalse(taken)
+        assertNull(repository.getMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun takeDoseOfUnknownMedicationReturnsFalse() = runTest {
+        val repository = PersistentMedicationRepository(InMemoryKeyValueStorage(), json)
+        repository.saveMedication(stockedMedication(dosesLeft = 5))
+
+        assertFalse(repository.takeDose("magnesium"))
+        assertEquals(5, repository.getMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun returnDoseAddsOneDoseAndPersists() = runTest {
+        val storage = InMemoryKeyValueStorage()
+        PersistentMedicationRepository(storage, json).saveMedication(stockedMedication(dosesLeft = 0))
+
+        PersistentMedicationRepository(storage, json).returnDose("aspirin")
+
+        assertEquals(1, PersistentMedicationRepository(storage, json).getMedications().single().dosesLeft)
+    }
+
+    @Test
+    fun returnDoseToUntrackedStockChangesNothing() = runTest {
+        val repository = PersistentMedicationRepository(InMemoryKeyValueStorage(), json)
+        repository.saveMedication(stockedMedication(dosesLeft = null))
+
+        repository.returnDose("aspirin")
+
+        assertNull(repository.getMedications().single().dosesLeft)
+    }
+
+    private fun stockedMedication(dosesLeft: Int?): Medication = Medication(
+        id = "aspirin",
+        name = "Aspirin",
+        dosageText = "1 tablet",
+        intakeRule = MedicationIntakeRule.AtExactTime(LocalTime(9, 30)),
+        courseStartDate = LocalDate(2026, 7, 4),
+        courseEndDate = null,
+        dosesLeft = dosesLeft,
+    )
 }

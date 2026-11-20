@@ -9,4 +9,9 @@ interface MedicationRepository {
     suspend fun updateMedication(medication: Medication)
 
     suspend fun deleteMedication(medicationId: String)
+
+    /** Returns true only when a dose was really removed: the stock is tracked and not empty. */
+    suspend fun takeDose(medicationId: String): Boolean
+
+    suspend fun returnDose(medicationId: String)
 }

@@ -250,6 +250,8 @@ class RescheduleMedicationRemindersUseCaseTest {
         override suspend fun saveMedication(medication: Medication) = Unit
         override suspend fun updateMedication(medication: Medication) = Unit
         override suspend fun deleteMedication(medicationId: String) = Unit
+        override suspend fun takeDose(medicationId: String): Boolean = error("Not used in this test")
+        override suspend fun returnDose(medicationId: String) = error("Not used in this test")
     }
 
     private class FakeRecordRepository : MedicationIntakeRecordRepository {

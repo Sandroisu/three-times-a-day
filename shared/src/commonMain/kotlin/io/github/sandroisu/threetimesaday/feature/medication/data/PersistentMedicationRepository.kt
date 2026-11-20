@@ -51,6 +51,26 @@ class PersistentMedicationRepository(
         }
     }
 
+    override suspend fun takeDose(medicationId: String): Boolean = mutex.withLock {
+        val medications = readMedications().toMutableList()
+        val medicationIndex = medications.indexOfFirst { it.id == medicationId }
+        val dosesLeft = medications.getOrNull(medicationIndex)?.dosesLeft ?: return@withLock false
+        if (dosesLeft <= 0) return@withLock false
+        medications[medicationIndex] = medications[medicationIndex].copy(dosesLeft = dosesLeft - 1)
+        writeMedications(medications)
+        true
+    }
+
+    override suspend fun returnDose(medicationId: String) {
+        mutex.withLock {
+            val medications = readMedications().toMutableList()
+            val medicationIndex = medications.indexOfFirst { it.id == medicationId }
+            val dosesLeft = medications.getOrNull(medicationIndex)?.dosesLeft ?: return@withLock
+            medications[medicationIndex] = medications[medicationIndex].copy(dosesLeft = dosesLeft + 1)
+            writeMedications(medications)
+        }
+    }
+
     private fun readMedications(): List<Medication> {
         val storedMedications = keyValueStorage.getString(MEDICATIONS_KEY) ?: return emptyList()
         val medications = runCatching { json.decodeFromString<List<Medication>>(storedMedications) }

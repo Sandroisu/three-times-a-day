@@ -689,6 +689,20 @@ class TodayViewModelTest {
         override suspend fun deleteMedication(medicationId: String) {
             storedMedications.removeAll { it.id == medicationId }
         }
+
+        override suspend fun takeDose(medicationId: String): Boolean {
+            val existingIndex = storedMedications.indexOfFirst { it.id == medicationId }
+            val dosesLeft = storedMedications.getOrNull(existingIndex)?.dosesLeft ?: return false
+            if (dosesLeft <= 0) return false
+            storedMedications[existingIndex] = storedMedications[existingIndex].copy(dosesLeft = dosesLeft - 1)
+            return true
+        }
+
+        override suspend fun returnDose(medicationId: String) {
+            val existingIndex = storedMedications.indexOfFirst { it.id == medicationId }
+            val dosesLeft = storedMedications.getOrNull(existingIndex)?.dosesLeft ?: return
+            storedMedications[existingIndex] = storedMedications[existingIndex].copy(dosesLeft = dosesLeft + 1)
+        }
     }
 
     private class FakeMedicationIntakeRecordRepository : MedicationIntakeRecordRepository {

@@ -140,5 +140,9 @@ class MedicationListViewModelTest {
         override suspend fun deleteMedication(medicationId: String) {
             storedMedications.removeAll { it.id == medicationId }
         }
+
+        override suspend fun takeDose(medicationId: String): Boolean = error("Not used in this test")
+
+        override suspend fun returnDose(medicationId: String) = error("Not used in this test")
     }
 }
