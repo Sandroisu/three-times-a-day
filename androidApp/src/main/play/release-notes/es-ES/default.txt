@@ -1,0 +1,5 @@
+• Pausa un recordatorio sin borrarlo.
+• Marca una toma o posponla desde la notificación.
+• Controla las dosis que quedan y recibe un aviso antes de que se acaben.
+• Nuevo historial de tomas con el cumplimiento de los últimos 7 o 30 días.
+• Posponer una toma atrasada ahora cuenta desde la hora actual.

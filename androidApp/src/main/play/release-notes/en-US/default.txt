@@ -1,0 +1,5 @@
+• Pause a reminder without deleting it.
+• Mark a dose as taken or snooze it right from the notification.
+• Track how many doses are left and get a warning before you run out.
+• New intake history with adherence for the last 7 or 30 days.
+• Snoozing a missed dose now counts from the current time.

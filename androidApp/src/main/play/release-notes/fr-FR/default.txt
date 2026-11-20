@@ -1,0 +1,5 @@
+• Mettez un rappel en pause sans le supprimer.
+• Marquez une prise ou reportez-la directement depuis la notification.
+• Suivez les doses restantes et soyez prévenu avant d'en manquer.
+• Nouvel historique des prises avec le taux de suivi sur 7 ou 30 jours.
+• Reporter une prise en retard compte désormais à partir de l'heure actuelle.

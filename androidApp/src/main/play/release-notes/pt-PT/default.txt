@@ -1,0 +1,5 @@
+• Pause um lembrete sem o apagar.
+• Marque uma toma ou adie-a diretamente na notificação.
+• Acompanhe as doses restantes e receba um aviso antes de acabarem.
+• Novo histórico de tomas com a adesão dos últimos 7 ou 30 dias.
+• Adiar uma toma em atraso conta agora a partir da hora atual.

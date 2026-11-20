@@ -1,0 +1,5 @@
+• Erinnerungen pausieren, ohne sie zu löschen.
+• Einnahme direkt in der Benachrichtigung bestätigen oder verschieben.
+• Vorrat an Dosen verfolgen und rechtzeitig gewarnt werden.
+• Neuer Einnahmeverlauf mit Quote für 7 oder 30 Tage.
+• Verpasste Einnahmen werden jetzt ab der aktuellen Uhrzeit verschoben.

@@ -1,0 +1,5 @@
+• Podsetnik možete pauzirati bez brisanja.
+• Označite da ste uzeli lek ili ga odložite direktno iz obaveštenja.
+• Pratite koliko doza je ostalo i dobijte upozorenje pre nego što ponestane.
+• Nova istorija uzimanja sa procentom za poslednjih 7 ili 30 dana.
+• Odlaganje propuštenog uzimanja sada se računa od trenutnog vremena.
