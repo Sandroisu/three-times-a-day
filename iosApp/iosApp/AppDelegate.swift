@@ -25,8 +25,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
-        let userInfo = response.notification.request.content.userInfo
-        MedicationReminderTapHandler.shared.handleNotificationResponse(userInfo: userInfo)
-        completionHandler()
+        MedicationReminderTapHandler.shared.handleNotificationResponse(
+            actionIdentifier: response.actionIdentifier,
+            userInfo: response.notification.request.content.userInfo,
+            onComplete: completionHandler
+        )
     }
 }

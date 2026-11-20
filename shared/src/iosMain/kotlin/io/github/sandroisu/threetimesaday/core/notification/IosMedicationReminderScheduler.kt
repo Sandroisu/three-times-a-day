@@ -1,5 +1,7 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationReminderAction
+import io.github.sandroisu.threetimesaday.feature.today.presentation.medicationReminderActionLabel
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -14,6 +16,10 @@ import platform.UserNotifications.UNAuthorizationStatusNotDetermined
 import platform.UserNotifications.UNAuthorizationStatusProvisional
 import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
+import platform.UserNotifications.UNNotificationAction
+import platform.UserNotifications.UNNotificationActionOptionNone
+import platform.UserNotifications.UNNotificationCategory
+import platform.UserNotifications.UNNotificationCategoryOptionNone
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNUserNotificationCenter
@@ -22,12 +28,14 @@ import kotlin.coroutines.resumeWithException
 
 const val NOTIFICATION_USER_INFO_ID_KEY = "notificationId"
 const val NOTIFICATION_USER_INFO_EVENT_ID_KEY = "eventId"
+private const val MEDICATION_REMINDER_CATEGORY_ID = "medication-reminder"
 
 class IosMedicationReminderScheduler(
     private val alarmBridge: IosAlarmBridge? = null,
 ) : MedicationReminderScheduler {
 
     private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
+    private var medicationCategoryRegistered = false
 
     override suspend fun getPermissionStatus(): NotificationPermissionStatus =
         suspendCancellableCoroutine { continuation ->
@@ -83,6 +91,10 @@ class IosMedicationReminderScheduler(
             userInfo[NOTIFICATION_USER_INFO_EVENT_ID_KEY] = notification.notificationId.removePrefix(MEDICATION_REMINDER_ID_PREFIX)
         }
         content.setUserInfo(userInfo)
+        if (notificationActions(notification.notificationId).isNotEmpty()) {
+            registerMedicationCategory()
+            content.setCategoryIdentifier(MEDICATION_REMINDER_CATEGORY_ID)
+        }
         val dateComponents = NSDateComponents().apply {
             year = notification.scheduledDateTime.year.toLong()
             month = (notification.scheduledDateTime.month.ordinal + 1).toLong()
@@ -106,6 +118,26 @@ class IosMedicationReminderScheduler(
                 }
             }
         }
+    }
+
+    // iOS keeps the category between launches; once per process is enough to pick up a new language.
+    private suspend fun registerMedicationCategory() {
+        if (medicationCategoryRegistered) return
+        val actions = MedicationReminderAction.entries.map { action ->
+            UNNotificationAction.actionWithIdentifier(
+                identifier = medicationReminderActionId(action),
+                title = medicationReminderActionLabel(action).resolve(),
+                options = UNNotificationActionOptionNone,
+            )
+        }
+        val category = UNNotificationCategory.categoryWithIdentifier(
+            identifier = MEDICATION_REMINDER_CATEGORY_ID,
+            actions = actions,
+            intentIdentifiers = emptyList<String>(),
+            options = UNNotificationCategoryOptionNone,
+        )
+        notificationCenter.setNotificationCategories(setOf(category))
+        medicationCategoryRegistered = true
     }
 
     override suspend fun cancelReminder(notificationId: String) {

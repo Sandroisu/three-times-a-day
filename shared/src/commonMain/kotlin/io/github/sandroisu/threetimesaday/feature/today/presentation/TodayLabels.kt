@@ -6,6 +6,7 @@ import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.today.domain.MEDICATION_POSTPONE_MINUTES
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationReminderAction
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.medicationIntakeMomentLabel
 import kotlinx.datetime.LocalDateTime
 import threetimesaday.shared.generated.resources.Res
@@ -48,6 +49,11 @@ import threetimesaday.shared.generated.resources.today_upcoming
 import threetimesaday.shared.generated.resources.today_upcoming_error
 
 internal fun postponeActionLabel(): UiText = UiText(Res.string.intake_postpone, listOf(MEDICATION_POSTPONE_MINUTES))
+
+internal fun medicationReminderActionLabel(action: MedicationReminderAction): UiText = when (action) {
+    MedicationReminderAction.Taken -> intakeStatusLabel(MedicationIntakeStatus.Taken)
+    MedicationReminderAction.Postpone -> postponeActionLabel()
+}
 
 internal fun overdueLabel(): UiText = UiText(Res.string.intake_overdue)
 
