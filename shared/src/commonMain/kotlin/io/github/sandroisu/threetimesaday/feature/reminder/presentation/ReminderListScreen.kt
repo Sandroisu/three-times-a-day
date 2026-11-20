@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -116,14 +117,23 @@ private fun ReminderListItemCard(reminder: ReminderListItemUiModel, onClick: () 
             horizontalArrangement = Arrangement.spacedBy(AppSpacing.medium),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(AppSpacing.compact)) {
+            Column(
+                Modifier.weight(1f).alpha(if (reminder.isEnabled) 1f else PAUSED_REMINDER_ALPHA),
+                verticalArrangement = Arrangement.spacedBy(AppSpacing.compact),
+            ) {
                 Text(reminder.title, style = MaterialTheme.typography.titleMedium)
                 Text(reminder.recurrenceText.asString(), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 reminder.nextOccurrenceText?.let { nextOccurrenceText ->
-                    Text(nextOccurrenceText.asString(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        nextOccurrenceText.asString(),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (reminder.isEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
             Icon(AppIcons.Chevron, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
         }
     }
 }
+
+private const val PAUSED_REMINDER_ALPHA = 0.6f

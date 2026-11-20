@@ -41,6 +41,7 @@ import threetimesaday.shared.generated.resources.reminder_monthly
 import threetimesaday.shared.generated.resources.reminder_new
 import threetimesaday.shared.generated.resources.reminder_next
 import threetimesaday.shared.generated.resources.reminder_not_found
+import threetimesaday.shared.generated.resources.reminder_paused
 import threetimesaday.shared.generated.resources.reminder_notification_message
 import threetimesaday.shared.generated.resources.reminder_notification_error
 import threetimesaday.shared.generated.resources.reminder_once
@@ -117,6 +118,7 @@ internal object ReminderLabels {
     val saveError = UiText(Res.string.reminder_save_error)
     val deleteError = UiText(Res.string.reminder_delete_error)
     val notFound = UiText(Res.string.reminder_not_found)
+    val paused = UiText(Res.string.reminder_paused)
     val notificationMessage = UiText(Res.string.reminder_notification_message)
     val notificationError = UiText(Res.string.reminder_notification_error)
     val exactReminders = UiText(Res.string.reminder_exact_reminders)

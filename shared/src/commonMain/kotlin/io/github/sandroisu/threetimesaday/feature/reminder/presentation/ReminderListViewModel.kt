@@ -33,10 +33,7 @@ internal class ReminderListViewModel(
         viewModelScope.launch {
             mutableUiState.update { currentState -> currentState.copy(isLoading = true, errorMessage = null) }
             try {
-                val currentDateTime = timeProvider.currentDateTime()
-                val reminders = reminderRepository.getReminders()
-                    .map { reminder -> toListItem(reminder, currentDateTime) }
-                    .sortedWith(compareBy(nullsLast()) { reminder -> reminder.nextOccurrence })
+                val reminders = readListItems()
                 mutableUiState.update { currentState ->
                     currentState.copy(isLoading = false, reminders = reminders)
                 }
@@ -96,14 +93,25 @@ internal class ReminderListViewModel(
         }
     }
 
+    private suspend fun readListItems(): List<ReminderListItemUiModel> {
+        val currentDateTime = timeProvider.currentDateTime()
+        return reminderRepository.getReminders()
+            .map { reminder -> toListItem(reminder, currentDateTime) }
+            .sortedWith(
+                compareByDescending<ReminderListItemUiModel> { reminder -> reminder.isEnabled }
+                    .thenBy(nullsLast()) { reminder -> reminder.nextOccurrence },
+            )
+    }
+
     private fun toListItem(reminder: Reminder, currentDateTime: LocalDateTime): ReminderListItemUiModel {
-        val nextOccurrence = findNextReminderDateTime(reminder, currentDateTime)
+        val nextOccurrence = if (reminder.isEnabled) findNextReminderDateTime(reminder, currentDateTime) else null
         return ReminderListItemUiModel(
             id = reminder.id,
             title = reminder.title,
             recurrenceText = reminderRecurrenceLabel(reminder.recurrence),
             nextOccurrence = nextOccurrence,
-            nextOccurrenceText = nextOccurrence?.let(::reminderNextLabel),
+            nextOccurrenceText = if (reminder.isEnabled) nextOccurrence?.let(::reminderNextLabel) else ReminderLabels.paused,
+            isEnabled = reminder.isEnabled,
         )
     }
 }

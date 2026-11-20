@@ -70,6 +70,7 @@
     <string name="reminder_weekday_sat">Sat</string>
     <string name="reminder_weekday_sun">Sun</string>
     <string name="reminder_next">Next: %1$s</string>
+    <string name="reminder_paused">Paused</string>
     <string name="reminder_delete">Delete reminder</string>
     <string name="reminder_delete_title">Delete reminder?</string>
     <string name="reminder_delete_message">The reminder and its notification will be deleted. This cannot be undone.</string>

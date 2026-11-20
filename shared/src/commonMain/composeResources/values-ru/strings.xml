@@ -70,6 +70,7 @@
     <string name="reminder_weekday_sat">Сб</string>
     <string name="reminder_weekday_sun">Вс</string>
     <string name="reminder_next">Ближайшее: %1$s</string>
+    <string name="reminder_paused">На паузе</string>
     <string name="reminder_delete">Удалить напоминание</string>
     <string name="reminder_delete_title">Удалить напоминание?</string>
     <string name="reminder_delete_message">Напоминание и его уведомление будут удалены. Это действие нельзя отменить.</string>

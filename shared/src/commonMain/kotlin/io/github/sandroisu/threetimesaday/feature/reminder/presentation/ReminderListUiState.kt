@@ -10,6 +10,7 @@ internal data class ReminderListItemUiModel(
     val recurrenceText: UiText,
     val nextOccurrence: LocalDateTime?,
     val nextOccurrenceText: UiText?,
+    val isEnabled: Boolean,
 )
 
 internal data class ReminderListUiState(
