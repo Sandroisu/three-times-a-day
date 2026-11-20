@@ -1,9 +1,19 @@
+import java.util.Properties
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     alias(libs.plugins.androidApplication)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.composeCompiler)
+    alias(libs.plugins.playPublisher)
+}
+
+// providers.fileContents keeps the configuration cache valid when local.properties changes.
+val localProperties = Properties().apply {
+    providers.fileContents(rootProject.layout.projectDirectory.file("local.properties"))
+        .asText
+        .orNull
+        ?.let { content -> load(content.reader()) }
 }
 
 kotlin {
@@ -51,4 +61,12 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+}
+
+play {
+    localProperties.getProperty("play.serviceAccountFile")?.let { credentialsPath ->
+        serviceAccountCredentials.set(file(credentialsPath))
+    }
+    defaultToAppBundles.set(true)
+    track.set("internal")
 }

@@ -19,6 +19,7 @@ kotlinxCoroutines = "1.10.2"
 kotlinxSerialization = "1.8.1"
 kotlinxDatetime = "0.7.1"
 navigation = "2.9.2"
+playPublisher = "4.1.2"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -59,3 +60,4 @@ composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMul
 composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+playPublisher = { id = "com.github.triplet.play", version.ref = "playPublisher" }
