@@ -57,6 +57,19 @@ class MedicationReminderActionHandlerTest {
     }
 
     @Test
+    fun medicationReminderOffersTakenAndPostpone() {
+        assertEquals(
+            listOf(MedicationReminderAction.Taken, MedicationReminderAction.Postpone),
+            notificationActions(NOTIFICATION_ID),
+        )
+    }
+
+    @Test
+    fun personalReminderOffersNoActions() {
+        assertTrue(notificationActions("${REMINDER_NOTIFICATION_ID_PREFIX}7|2026-07-04T09:00").isEmpty())
+    }
+
+    @Test
     fun takenActionFromNotificationMarksIntakeTaken() = runTest {
         medicationRepository.saveMedication(medication())
 

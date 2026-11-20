@@ -11,6 +11,8 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.util.Log
+import io.github.sandroisu.threetimesaday.feature.today.domain.MEDICATION_POSTPONE_MINUTES
+import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationReminderAction
 import io.github.sandroisu.threetimesaday.shared.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -92,7 +94,37 @@ class MedicationReminderReceiver : BroadcastReceiver() {
             .setPriority(Notification.PRIORITY_HIGH)
             .setDefaults(Notification.DEFAULT_ALL)
             .setContentIntent(buildContentIntent(context, notificationId, notificationRequestCode))
+            .apply {
+                notificationActions(notificationId).forEach { action ->
+                    addAction(buildAction(context, action, notificationId, notificationRequestCode))
+                }
+            }
             .build()
+    }
+
+    private fun buildAction(
+        context: Context,
+        action: MedicationReminderAction,
+        notificationId: String,
+        notificationRequestCode: Int,
+    ): Notification.Action {
+        val title = when (action) {
+            MedicationReminderAction.Taken -> context.getString(R.string.medication_action_taken)
+            MedicationReminderAction.Postpone ->
+                context.getString(R.string.medication_action_postpone, MEDICATION_POSTPONE_MINUTES)
+        }
+        // The intent action tells the two buttons apart: PendingIntent ignores extras when it matches intents.
+        val actionIntent = Intent(context, MedicationReminderActionReceiver::class.java).apply {
+            this.action = medicationReminderActionId(action)
+            putExtra(MedicationReminderActionReceiver.EXTRA_NOTIFICATION_ID, notificationId)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            notificationRequestCode,
+            actionIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        return Notification.Action.Builder(null, title, pendingIntent).build()
     }
 
     private fun buildContentIntent(

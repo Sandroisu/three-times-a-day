@@ -4,4 +4,6 @@
     <string name="alarm_channel">Будильники</string>
     <string name="alarm_channel_description">Непрерывные сигналы, которые звучат до выключения</string>
     <string name="alarm_stop">Выключить</string>
+    <string name="medication_action_taken">Принято</string>
+    <string name="medication_action_postpone">Отложить на %1$d мин</string>
 </resources>

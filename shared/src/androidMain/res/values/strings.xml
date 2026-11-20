@@ -4,4 +4,6 @@
     <string name="alarm_channel">Alarms</string>
     <string name="alarm_channel_description">Persistent alarms that sound until stopped</string>
     <string name="alarm_stop">Stop</string>
+    <string name="medication_action_taken">Taken</string>
+    <string name="medication_action_postpone">Snooze for %1$d min</string>
 </resources>

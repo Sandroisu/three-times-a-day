@@ -21,6 +21,13 @@ import kotlinx.coroutines.CancellationException
 internal const val MEDICATION_REMINDER_TAKEN_ACTION_ID = "medication-reminder-taken"
 internal const val MEDICATION_REMINDER_POSTPONE_ACTION_ID = "medication-reminder-postpone"
 
+internal fun notificationActions(notificationId: String): List<MedicationReminderAction> =
+    if (notificationId.startsWith(MEDICATION_REMINDER_ID_PREFIX)) {
+        MedicationReminderAction.entries
+    } else {
+        emptyList()
+    }
+
 internal fun medicationReminderActionFromId(actionId: String): MedicationReminderAction? = when (actionId) {
     MEDICATION_REMINDER_TAKEN_ACTION_ID -> MedicationReminderAction.Taken
     MEDICATION_REMINDER_POSTPONE_ACTION_ID -> MedicationReminderAction.Postpone

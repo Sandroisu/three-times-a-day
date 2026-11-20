@@ -32,6 +32,10 @@
             android:name="io.github.sandroisu.threetimesaday.core.notification.MedicationReminderReceiver"
             android:exported="false" />
 
+        <receiver
+            android:name="io.github.sandroisu.threetimesaday.core.notification.MedicationReminderActionReceiver"
+            android:exported="false" />
+
         <service
             android:name="io.github.sandroisu.threetimesaday.core.notification.ReminderAlarmService"
             android:exported="false"
