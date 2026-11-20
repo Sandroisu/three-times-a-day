@@ -1,5 +1,6 @@
 package io.github.sandroisu.threetimesaday.feature.today.presentation
 
+import io.github.sandroisu.threetimesaday.feature.today.domain.MEDICATION_POSTPONE_MINUTES
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import threetimesaday.shared.generated.resources.Res

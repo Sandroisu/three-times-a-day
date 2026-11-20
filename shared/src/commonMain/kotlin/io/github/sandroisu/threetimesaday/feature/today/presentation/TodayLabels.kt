@@ -5,6 +5,7 @@ import io.github.sandroisu.threetimesaday.core.time.formatTimeOfDay
 import io.github.sandroisu.threetimesaday.core.ui.UiText
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeMoment
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
+import io.github.sandroisu.threetimesaday.feature.today.domain.MEDICATION_POSTPONE_MINUTES
 import io.github.sandroisu.threetimesaday.feature.medication.presentation.medicationIntakeMomentLabel
 import kotlinx.datetime.LocalDateTime
 import threetimesaday.shared.generated.resources.Res
@@ -45,8 +46,6 @@ import threetimesaday.shared.generated.resources.today_skip
 import threetimesaday.shared.generated.resources.today_title
 import threetimesaday.shared.generated.resources.today_upcoming
 import threetimesaday.shared.generated.resources.today_upcoming_error
-
-const val MEDICATION_POSTPONE_MINUTES = 10
 
 internal fun postponeActionLabel(): UiText = UiText(Res.string.intake_postpone, listOf(MEDICATION_POSTPONE_MINUTES))
 

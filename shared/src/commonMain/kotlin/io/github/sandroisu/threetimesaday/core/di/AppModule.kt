@@ -32,6 +32,7 @@ import io.github.sandroisu.threetimesaday.feature.settings.domain.StartScreenRep
 import io.github.sandroisu.threetimesaday.feature.settings.presentation.SettingsViewModel
 import io.github.sandroisu.threetimesaday.feature.today.data.PersistentMedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.BuildMedicationIntakeRecordUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.ChangeMedicationIntakeStatusUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
@@ -58,6 +59,7 @@ val commonAppModule = module {
     single { GenerateMedicationIntakeEventsForDateUseCase() }
     single { ApplyMedicationIntakeRecordsUseCase() }
     single { ChangeMedicationIntakeStatusUseCase(get(), get()) }
+    single { BuildMedicationIntakeRecordUseCase(get()) }
     single { FindNextReminderDateTimeUseCase() }
     single {
         RescheduleMedicationRemindersUseCase(

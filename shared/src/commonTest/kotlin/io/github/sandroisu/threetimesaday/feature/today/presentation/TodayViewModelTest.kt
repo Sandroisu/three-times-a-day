@@ -15,6 +15,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRe
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailySchedule
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.BuildMedicationIntakeRecordUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.ChangeMedicationIntakeStatusUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
@@ -656,6 +657,7 @@ class TodayViewModelTest {
             rescheduleMedicationReminders = rescheduleReminders,
             appSettingsOpener = appSettingsOpener,
             changeMedicationIntakeStatus = ChangeMedicationIntakeStatusUseCase(medicationRepository, recordRepository),
+            buildMedicationIntakeRecord = BuildMedicationIntakeRecordUseCase(timeProvider),
         )
     }
 

@@ -6,15 +6,14 @@ import io.github.sandroisu.threetimesaday.core.notification.MedicationReminderSc
 import io.github.sandroisu.threetimesaday.core.settings.AppSettingsOpener
 import io.github.sandroisu.threetimesaday.core.time.TimeProvider
 import io.github.sandroisu.threetimesaday.core.time.formatScreenDate
-import io.github.sandroisu.threetimesaday.core.time.plusMinutes
 import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationRepository
 import io.github.sandroisu.threetimesaday.feature.schedule.domain.DailyScheduleRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.ApplyMedicationIntakeRecordsUseCase
+import io.github.sandroisu.threetimesaday.feature.today.domain.BuildMedicationIntakeRecordUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.ChangeMedicationIntakeStatusUseCase
 import io.github.sandroisu.threetimesaday.feature.today.domain.GenerateMedicationIntakeEventsForDateUseCase
-import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecordRepository
 import io.github.sandroisu.threetimesaday.feature.today.domain.RescheduleMedicationRemindersUseCase
@@ -38,6 +37,7 @@ internal class TodayViewModel(
     private val rescheduleMedicationReminders: RescheduleMedicationRemindersUseCase,
     private val appSettingsOpener: AppSettingsOpener,
     private val changeMedicationIntakeStatus: ChangeMedicationIntakeStatusUseCase,
+    private val buildMedicationIntakeRecord: BuildMedicationIntakeRecordUseCase,
 ) : ViewModel() {
 
     private val mutableUiState = MutableStateFlow(TodayUiState())
@@ -195,7 +195,7 @@ internal class TodayViewModel(
             ?: return
         viewModelScope.launch {
             try {
-                changeMedicationIntakeStatus(buildRecord(targetEvent, status))
+                changeMedicationIntakeStatus(buildMedicationIntakeRecord(targetEvent, status))
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (saveFailure: Exception) {
@@ -208,23 +208,6 @@ internal class TodayViewModel(
             }
             loadToday()
         }
-    }
-
-    private fun buildRecord(event: MedicationIntakeEvent, status: MedicationIntakeStatus): MedicationIntakeRecord {
-        val updatedDateTime = timeProvider.currentDateTime()
-        val postponedDateTime = if (status == MedicationIntakeStatus.Postponed) {
-            plusMinutes(event.scheduledDateTime, MEDICATION_POSTPONE_MINUTES)
-        } else {
-            null
-        }
-        return MedicationIntakeRecord(
-            eventId = event.eventId,
-            medicationId = event.medicationId,
-            scheduledDateTime = event.scheduledDateTime,
-            status = status,
-            updatedDateTime = updatedDateTime,
-            postponedDateTime = postponedDateTime
-        )
     }
 
     private suspend fun refreshPermissionStatus() {
