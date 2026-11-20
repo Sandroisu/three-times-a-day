@@ -2,6 +2,7 @@ package io.github.sandroisu.threetimesaday.core.notification
 
 import io.github.sandroisu.threetimesaday.core.storage.KeyValueStorage
 import io.github.sandroisu.threetimesaday.core.storage.NsUserDefaultsKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import kotlinx.serialization.json.Json
 
 fun parseMedicationReminderLaunchData(userInfo: Map<Any?, *>?): MedicationReminderLaunchData? {
@@ -24,10 +25,6 @@ object MedicationReminderTapHandler {
     fun handleNotificationResponse(userInfo: Map<Any?, *>?) {
         val launchData = parseMedicationReminderLaunchData(userInfo) ?: return
         val storage: KeyValueStorage = NsUserDefaultsKeyValueStorage()
-        val json = Json {
-            ignoreUnknownKeys = true
-            explicitNulls = false
-        }
-        writeMedicationReminderLaunchData(storage, json, launchData)
+        writeMedicationReminderLaunchData(storage, storageJson, launchData)
     }
 }

@@ -1,18 +1,15 @@
 package io.github.sandroisu.threetimesaday.core.notification
 
 import io.github.sandroisu.threetimesaday.core.storage.InMemoryKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import kotlinx.coroutines.test.runTest
-import kotlinx.serialization.json.Json
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class MedicationReminderLaunchDataParsingTest {
 
-    private val json = Json {
-        ignoreUnknownKeys = true
-        explicitNulls = false
-    }
+    private val json = storageJson
 
     @Test
     fun returnsLaunchDataWhenBothKeysPresent() {

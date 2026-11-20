@@ -2,11 +2,11 @@ package io.github.sandroisu.threetimesaday.core.notification
 
 import android.content.Context
 import io.github.sandroisu.threetimesaday.core.storage.AndroidKeyValueStorage
+import io.github.sandroisu.threetimesaday.core.storage.storageJson
 import io.github.sandroisu.threetimesaday.core.time.SystemTimeProvider
 import io.github.sandroisu.threetimesaday.feature.reminder.data.PersistentReminderRepository
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.FindNextReminderDateTimeUseCase
 import io.github.sandroisu.threetimesaday.feature.reminder.domain.RescheduleRemindersUseCase
-import kotlinx.serialization.json.Json
 
 internal object AndroidReminderRescheduler {
 
@@ -16,10 +16,7 @@ internal object AndroidReminderRescheduler {
     ) {
         val applicationContext = context.applicationContext
         val storage = AndroidKeyValueStorage(applicationContext)
-        val json = Json {
-            ignoreUnknownKeys = true
-            encodeDefaults = true
-        }
+        val json = storageJson
         val reminderRegistry = PersistentMedicationReminderRegistry(storage, json)
         if (deliveredNotificationId != null) {
             reminderRegistry.removeReminderId(deliveredNotificationId)

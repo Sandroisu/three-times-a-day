@@ -154,6 +154,18 @@ class StorageJsonTest {
     }
 
     @Test
+    fun readsLaunchDataWrittenWithFormerLaunchWriterConfig() {
+        val formerLaunchWriterJson = Json {
+            ignoreUnknownKeys = true
+            explicitNulls = false
+        }
+        val writtenBefore = formerLaunchWriterJson.encodeToString(launchData)
+
+        assertEquals(writtenBefore, json.encodeToString(launchData))
+        assertEquals(launchData, json.decodeFromString<MedicationReminderLaunchData>(writtenBefore))
+    }
+
+    @Test
     fun keepsReminderRegistryFormat() {
         val ids = listOf("medication-reminder|event-1", "reminder|gym")
         val storedIds = """["medication-reminder|event-1","reminder|gym"]"""
