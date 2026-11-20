@@ -1,10 +1,9 @@
-package io.github.sandroisu.threetimesaday.feature.today.presentation
+package io.github.sandroisu.threetimesaday.feature.today.domain
 
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
-import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
 import kotlinx.datetime.LocalDateTime
 
-fun isMedicationIntakeEventExpired(
+internal fun isMedicationIntakeEventExpired(
     event: MedicationIntakeEvent,
     currentDateTime: LocalDateTime
 ): Boolean {

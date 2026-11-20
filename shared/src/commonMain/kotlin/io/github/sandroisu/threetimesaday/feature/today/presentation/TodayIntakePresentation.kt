@@ -5,6 +5,7 @@ import io.github.sandroisu.threetimesaday.feature.medication.domain.Medication
 import io.github.sandroisu.threetimesaday.feature.medication.domain.MedicationIntakeStatus
 import io.github.sandroisu.threetimesaday.feature.medication.domain.isMedicationStockLow
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeEvent
+import io.github.sandroisu.threetimesaday.feature.today.domain.isMedicationIntakeEventExpired
 import io.github.sandroisu.threetimesaday.feature.today.domain.MedicationIntakeRecord
 import kotlinx.datetime.LocalDateTime
 

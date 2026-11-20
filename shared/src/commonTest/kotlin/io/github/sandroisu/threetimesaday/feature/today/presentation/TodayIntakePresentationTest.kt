@@ -17,6 +17,7 @@ import kotlinx.datetime.LocalDateTime
 import threetimesaday.shared.generated.resources.Res
 import threetimesaday.shared.generated.resources.date_day_month
 import threetimesaday.shared.generated.resources.date_time
+import threetimesaday.shared.generated.resources.intake_overdue
 import threetimesaday.shared.generated.resources.intake_postponed
 import threetimesaday.shared.generated.resources.intake_taken
 import threetimesaday.shared.generated.resources.intake_taken_at
@@ -25,6 +26,11 @@ import threetimesaday.shared.generated.resources.time_value
 
 class TodayIntakePresentationTest {
     private val now = LocalDateTime(2026, 9, 20, 12, 0)
+
+    @Test
+    fun overdueLabelUsesLocalizedResource() {
+        assertEquals(Res.string.intake_overdue, overdueLabel().resource)
+    }
 
     @Test
     fun postponedAcrossMidnightShowsTheDateWithoutChangingItsTime() {
