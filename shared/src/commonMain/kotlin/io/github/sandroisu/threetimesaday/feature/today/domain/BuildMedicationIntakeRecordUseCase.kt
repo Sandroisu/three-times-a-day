@@ -14,8 +14,10 @@ internal class BuildMedicationIntakeRecordUseCase(
         event: MedicationIntakeEvent,
         status: MedicationIntakeStatus,
     ): MedicationIntakeRecord {
+        val currentDateTime = timeProvider.currentDateTime()
+        // An overdue intake postponed from its old time would land in the past and never remind again.
         val postponedDateTime = if (status == MedicationIntakeStatus.Postponed) {
-            plusMinutes(event.scheduledDateTime, MEDICATION_POSTPONE_MINUTES)
+            plusMinutes(maxOf(event.scheduledDateTime, currentDateTime), MEDICATION_POSTPONE_MINUTES)
         } else {
             null
         }
@@ -24,7 +26,7 @@ internal class BuildMedicationIntakeRecordUseCase(
             medicationId = event.medicationId,
             scheduledDateTime = event.scheduledDateTime,
             status = status,
-            updatedDateTime = timeProvider.currentDateTime(),
+            updatedDateTime = currentDateTime,
             postponedDateTime = postponedDateTime,
         )
     }

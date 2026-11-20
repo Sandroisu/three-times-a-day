@@ -36,6 +36,15 @@ class BuildMedicationIntakeRecordUseCaseTest {
     }
 
     @Test
+    fun postponingOverdueIntakeCountsFromCurrentTime() {
+        val buildLateRecord = BuildMedicationIntakeRecordUseCase(FixedTimeProvider(LocalDateTime(2026, 7, 3, 9, 30)))
+
+        val record = buildLateRecord(event(eventDateTime), MedicationIntakeStatus.Postponed)
+
+        assertEquals(LocalDateTime(2026, 7, 3, 9, 40), record.postponedDateTime)
+    }
+
+    @Test
     fun postponeNearMidnightMovesToNextDay() {
         val lateEvent = event(LocalDateTime(2026, 7, 3, 23, 55))
         val buildLateRecord = BuildMedicationIntakeRecordUseCase(FixedTimeProvider(LocalDateTime(2026, 7, 3, 23, 50)))
